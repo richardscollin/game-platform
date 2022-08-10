@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Host Game</title>
+    <style>
+        .game-settings {
+            border: 2px solid black;
+            padding: 0 30px;
+            max-width: 500px;
+            border-radius: 5px;
+            height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>
+        Host Game
+    </h1>
+
+    <form class="game-settings">
+        <h2>Settings</h2>
+        <input type="submit" value="Create Game Room"></input>
+        <p class="current-room-code"></p>
+    </form>
+
+    <ul class="messages"></ul>
+
+    <script type="module">
+        import { GameHost } from "/game-host/host.js";
+
+        function log(message) {
+            const li = document.createElement('li');
+            li.textContent = message;
+            document.querySelector('.messages').appendChild(li);
+            console.log(message);
+        }
+
+        function main() {
+            const form = document.querySelector("form");
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const gameHost = new GameHost();
+                gameHost.addEventListener("room-code", () => {
+                    document.querySelector(".current-room-code").textContent = gameHost.roomCode;
+                });
+                window.gameHost = gameHost;
+            });
+
+        }
+        window.addEventListener("load", main);
+    </script>
+
+</body>
+
+</html>

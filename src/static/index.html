@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Join a Game</title>
+    <style>
+        .room-code-input-wrapper {
+            border: 2px solid black;
+            padding: 1px;
+            border-radius: 5px;
+        }
+
+        .room-code-input {
+            border: none;
+            margin-right: 0;
+            text-transform: uppercase;
+        }
+
+        .join-game-button {
+            font-weight: bold;
+            color: white;
+            background-color: rgb(69, 114, 210);
+            border: none;
+            padding: 5px 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+    </div>
+    <h1>
+        Join a Game
+    </h1>
+    <form>
+        <label>
+            Room Code:
+        </label>
+
+        <span class="room-code-input-wrapper">
+            <input class="room-code-input" type="text" name="roomCode"></input>
+            <input class="join-game-button" type="submit" value="Join"></input>
+        </span>
+    </form>
+    <a class="host-game" href="host.html">Host a Game</a>
+
+    <ul class="messages"></ul>
+
+    <script type="module">
+        import { joinRoom } from "./game-client/client.js";
+
+        function main() {
+            const form = document.querySelector("form");
+            const input = document.querySelector(".room-code-input");
+
+            const params = new URLSearchParams(document.location.search);
+            const roomCode = params.get("roomCode");
+            if (roomCode) {
+                input.value = roomCode;
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const roomCode = input.value;
+                joinRoom(roomCode);
+
+            });
+        }
+        window.addEventListener("load", main);
+    </script>
+</body>
+
+</html>
