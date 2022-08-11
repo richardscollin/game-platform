@@ -47,7 +47,7 @@ class Room {
           break;
         }
         case "ice": {
-          this.players[msg.value.playerId].iceCandidates.push(msg.value.candidate);
+          this.players[msg.value.playerId].iceCandidates = msg.value.candidates;
           break;
         }
         default:
@@ -68,6 +68,10 @@ class Room {
         value: { playerId: player.id, offer: player.offer },
       })
     );
+  }
+
+  sendMessage(message) {
+    this.hostWebsocket.send(JSON.stringify(message));
   }
 
   notifyRoomCode() {

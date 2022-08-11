@@ -1,29 +1,15 @@
-function logPeerConnection(pc) {
-  [
-    "onicegatheringstatechange",
-    "onicecandidate",
-    "onnegotiationneeded",
-    "oniceconnectionstatechange",
-    "onicecandidateerror",
-  ].forEach((s) => {
-    pc[s] = (ev) => {
-      console.log(s);
-      console.log(ev);
-    };
-  });
-}
+// export const rtcConfig = {
+//   iceServers: [
+//     {
+//       urls: ["stun:stun.l.google.com:19302"],
+//     },
+//   ],
+//   iceTransportPolicy: "all",
+//   iceCandidatePoolSize: 1,
+// };
+export const rtcConfig = {}
 
-const rtcConfig = {
-  iceServers: [
-    {
-      urls: ["stun:stun.l.google.com:19302"],
-    },
-  ],
-  iceTransportPolicy: "all",
-  iceCandidatePoolSize: 1,
-};
-
-function postJson(url, data) {
+export function postJson(url, data) {
   // console.log(`POST ${url}`);
   return fetch(url, {
     method: "POST",
@@ -32,4 +18,7 @@ function postJson(url, data) {
   });
 }
 
-export { rtcConfig, logPeerConnection, postJson };
+export function getWebSocketsOrigin() {
+  const { protocol, hostname, port } = document.location;
+  return `${protocol === "https:" ? "wss:" : "ws:"}//${hostname}:${port}`;
+}

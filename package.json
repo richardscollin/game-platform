@@ -7,7 +7,7 @@
   "scripts": {
     "docs": "jsdoc --readme README.md --package package.json --recurse src/",
     "lint": "eslint src",
-    "start": "nodemon src/index.js"
+    "start": "nodemon src/server.js"
   },
   "author": "",
   "license": "ISC",

@@ -1,5 +1,6 @@
 import cookieParser from "cookie-parser";
 import express from "express";
+import path from "path";
 import http from "http";
 import { WebSocketServer } from "ws";
 import { SignalingServer, Player } from "./signaling-server/index.js";
@@ -11,11 +12,15 @@ app.use(express.static("src/static"));
 
 const signalingServer = new SignalingServer();
 
+app.get("/", (req, res) => {
+  res.sendFile(path.resolve("src/static/game-client/client.html"));
+});
+
 app.get("/rooms", (_req, res) => {
   res.json({ rooms: signalingServer.rooms });
 });
 
-app.post("/pop-ice-candidate/:roomCode", (req, res) => {
+app.post("/get-ice-candidates/:roomCode", (req, res) => {
   const room = signalingServer.findRoom(req.params.roomCode);
   if (!room) {
     res.status(400).end("Invalid room code");
@@ -28,12 +33,10 @@ app.post("/pop-ice-candidate/:roomCode", (req, res) => {
     return;
   }
 
-  const candidates = room.players[playerId].iceCandidates.slice();
-  room.players[playerId].iceCandidates = [];
-  res.json(candidates).end();
+  res.json(room.players[playerId].iceCandidates).end();
 });
 
-app.post("/add-ice-candidate/:roomCode", (req, res) => {
+app.post("/add-ice-candidates/:roomCode", (req, res) => {
   const playerId = req.cookies.playerId;
   if (!playerId) {
     res.status(400).end("Missing required cookie playerId");
@@ -46,9 +49,13 @@ app.post("/add-ice-candidate/:roomCode", (req, res) => {
     return;
   }
 
-  room.hostWebsocket.send(
-    JSON.stringify({ type: "ice", value: { candidate: req.body, playerId } })
-  );
+  for (const candidate of req.body) {
+    room.sendMessage({
+      type: "ice",
+      value: { candidate, playerId },
+    });
+  }
+
   res.status(200).end();
 });
 
@@ -65,15 +72,15 @@ app.post("/join-room/:roomCode", (req, res) => {
 
   room.addPlayer(player, (answer) => {
     console.log(`add player ${player.id}`);
-    console.log("forwarding");
-    console.log(answer.sdp);
-    if (answer) {
-      player.answer = answer;
-      res.cookie("playerId", player.id, { sameSite: "strict" });
-      res.json(answer).end();
-    } else {
+
+    if (!answer) {
       res.status(500).end("A signaling error occured while connecting");
+      return;
     }
+
+    player.answer = answer;
+    res.cookie("playerId", player.id, { sameSite: "strict" });
+    res.json(answer).end();
   });
 });
 

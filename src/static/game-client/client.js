@@ -1,20 +1,14 @@
-import { logPeerConnection, rtcConfig, postJson } from "../common/utils.js";
+import { rtcConfig, postJson } from "../common/utils.js";
 
-async function joinRoom(roomCode) {
+/**
+ * @param {string} roomCode
+ * @returns {RTCDataChannel}
+ */
+export async function joinRoom(roomCode) {
   const pc = new RTCPeerConnection(rtcConfig);
-  logPeerConnection(pc);
 
-  pc.onicecandidate = ({ candidate }) => {
-    if (candidate) {
-      //console.log(candidate);
-      postJson(`/add-ice-candidate/${roomCode}`, candidate);
-    }
-  };
-
-  // {offerToReceiveAudio: 1} // this is needed for ice for some reason
-  await pc.setLocalDescription(
-    await pc.createOffer({ offerToReceiveAudio: 1 })
-  );
+  const offerConfig = { offerToReceiveAudio: 1 }; // this is needed for ice for some reason
+  await pc.setLocalDescription(await pc.createOffer(offerConfig));
 
   const res = await postJson(`/join-room/${roomCode}`, pc.localDescription);
   if (!res.ok) {
@@ -22,32 +16,32 @@ async function joinRoom(roomCode) {
     return;
   }
   await pc.setRemoteDescription(await res.json());
-  window.pc = pc;
 
-  pc.onconnectionstatechange = () => {
-    console.log("on connection state change");
+  const candidates = [];
+  pc.onicecandidate = ({ candidate }) => {
+    candidates.push(candidate);
+    if (!candidate) {
+      postJson(`/add-ice-candidates/${roomCode}`, candidates);
+    }
   };
 
-  const interval = setInterval(async () => {
-    const res = await postJson(`/pop-ice-candidate/${roomCode}`);
-    if (res.ok) {
-      const candidates = await res.json();
-      candidates.forEach((candidate) => {
-        pc.addIceCandidate(candidate);
-      });
-      if (candidates.length > 0) {
-        clearInterval(interval);
+  async function pollIceCandidates() {
+    const res = await postJson(`/get-ice-candidates/${roomCode}`);
+    if (!res.ok) return;
+    let containsEndOfCandidates = false;
+
+    (await res.json()).forEach((candidate) => {
+      pc.addIceCandidate(candidate);
+      if (!candidate) {
+        containsEndOfCandidates = true;
       }
+    });
+
+    if (!containsEndOfCandidates) {
+      setTimeout(pollIceCandidates, 1000);
     }
-  }, 2000);
+  }
+  setTimeout(pollIceCandidates, 500);
 
-  setTimeout(() => {
-    const channel = pc.createDataChannel("room");
-    // TODO it seems we can't get to the point where we 
-    // can send data, channel onopen never triggers
-    // 
-    channel.send('ping')
-  }, 3000);
+  return pc.createDataChannel(`room-${roomCode}`);
 }
-
-export { joinRoom };

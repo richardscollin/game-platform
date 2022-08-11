@@ -44,8 +44,6 @@
     </form>
     <a class="host-game" href="host.html">Host a Game</a>
 
-    <ul class="messages"></ul>
-
     <script type="module">
         import { joinRoom } from "./game-client/client.js";
 
@@ -59,13 +57,17 @@
                 input.value = roomCode;
             }
 
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
 
                 const roomCode = input.value;
-                joinRoom(roomCode);
-
+                const channel = await joinRoom(roomCode);
+                channel.onopen = () => {
+                    console.log("on data channel open");
+                    channel.send("pign")
+                }
+                window.channel = channel;
             });
         }
         window.addEventListener("load", main);
