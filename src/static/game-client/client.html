@@ -62,12 +62,12 @@
                 e.stopPropagation();
 
                 const roomCode = input.value;
-                const channel = await joinRoom(roomCode);
-                channel.onopen = () => {
+                await joinRoom(roomCode, (channel) => {
+                    console.log("channel " + JSON.stringify(channel))
                     console.log("on data channel open");
                     channel.send("pign")
-                }
-                window.channel = channel;
+                });
+
             });
         }
         window.addEventListener("load", main);

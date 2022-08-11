@@ -35,30 +35,7 @@ app.post("/get-ice-candidates/:roomCode", (req, res) => {
 
   res.json(room.players[playerId].iceCandidates).end();
 });
-
-app.post("/add-ice-candidates/:roomCode", (req, res) => {
-  const playerId = req.cookies.playerId;
-  if (!playerId) {
-    res.status(400).end("Missing required cookie playerId");
-    return;
-  }
-
-  const room = signalingServer.findRoom(req.params.roomCode);
-  if (!room) {
-    res.status(400).end("Invalid room code");
-    return;
-  }
-
-  for (const candidate of req.body) {
-    room.sendMessage({
-      type: "ice",
-      value: { candidate, playerId },
-    });
-  }
-
-  res.status(200).end();
-});
-
+  
 app.post("/join-room/:roomCode", (req, res) => {
   const room = signalingServer.findRoom(req.params.roomCode);
 

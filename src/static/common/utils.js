@@ -1,13 +1,12 @@
-// export const rtcConfig = {
-//   iceServers: [
-//     {
-//       urls: ["stun:stun.l.google.com:19302"],
-//     },
-//   ],
-//   iceTransportPolicy: "all",
-//   iceCandidatePoolSize: 1,
-// };
-export const rtcConfig = {}
+export const rtcConfig = {
+  iceServers: [
+    {
+      urls: ["stun:stun.l.google.com:19302"],
+    },
+  ],
+  iceTransportPolicy: "all",
+  iceCandidatePoolSize: 1,
+};
 
 export function postJson(url, data) {
   // console.log(`POST ${url}`);

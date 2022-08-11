@@ -26,25 +26,6 @@ class Player {
   onMessage(message) {
     console.log(`player ${this.id} on message ${message}`);
   }
-
-  addIceCandidate(candidate) {
-    // in some cases the ice candidates arrive before the player connection is created
-    if (this.pc) {
-      this.pc.addIceCandidate(candidate);
-      this.clearIceCandidates();
-    } else {
-      this.iceCandidates.push(candidate);
-    }
-  }
-
-  clearIceCandidates() {
-    if (!this.pc) return;
-    this.iceCandidates.forEach((candidate) => {
-      console.log("recv ice candidate");
-      this.pc.addIceCandidate(candidate);
-    });
-    this.iceCandidates = [];
-  }
 }
 
 export class GameHost {
@@ -59,6 +40,7 @@ export class GameHost {
     this.socket.onmessage = async (event) => {
       const msg = JSON.parse(event.data);
 
+      console.log(msg.type);
       switch (msg.type) {
         case "room-code":
           this.roomCode = msg.value;
@@ -66,16 +48,13 @@ export class GameHost {
           break;
         case "connect-player": {
           const { offer, playerId } = msg.value;
-          const { answer } = await this.webRTC(playerId, offer);
-          this.sendMessage({ type: "answer", value: { answer, playerId } });
-          this.eventListeners["players"]?.forEach((cb) => cb());
+          await this.webRTC(playerId, offer, (answer) => {
+            this.sendMessage({ type: "answer", value: { answer, playerId } });
+            this.eventListeners["players"]?.forEach((cb) => cb());
+          });
           break;
         }
-        case "ice": {
-          const { candidate, playerId } = msg.value;
-          this.getOrCreatePlayer(playerId).addIceCandidate(candidate);
-          break;
-        }
+
         default:
           console.log(`unknown message type: ${msg.type}`);
           break;
@@ -83,34 +62,32 @@ export class GameHost {
     };
   }
 
-  async webRTC(playerId, offer) {
+  async webRTC(playerId, offer, onAnswer) {
     const pc = new RTCPeerConnection(rtcConfig);
     const player = this.getOrCreatePlayer(playerId, pc);
 
-    const candidates = [];
-    pc.onicecandidate = ({ candidate }) => {
-      candidates.push(candidate);
-      if (!candidate) {
-        this.sendMessage({ type: "ice", value: { candidates, playerId } });
+    pc.onicegatheringstatechange = async ({ target }) => {
+      if (target.iceGatheringState === "complete") {
+        onAnswer(pc.localDescription);
       }
     };
+    await pc.setRemoteDescription(offer);
+    await pc.setLocalDescription(await pc.createAnswer());
 
     pc.ondatachannel = ({ channel }) => {
       console.log("ondatachannel");
       channel.onopen = () => {
         player.channel = channel;
+        console.log("open");
         this.eventListeners["players"]?.forEach((cb) => cb());
       };
       channel.onclose = () => {
         player.channel = null;
+        console.log("close");
         this.eventListeners["players"]?.forEach((cb) => cb());
       };
       channel.onmessage = ({ message }) => player.onMessage(message);
     };
-
-    await pc.setRemoteDescription(offer);
-    await pc.setLocalDescription(await pc.createAnswer());
-    return { answer: pc.localDescription };
   }
 
   getOrCreatePlayer(playerId, pc) {

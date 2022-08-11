@@ -4,44 +4,35 @@ import { rtcConfig, postJson } from "../common/utils.js";
  * @param {string} roomCode
  * @returns {RTCDataChannel}
  */
-export async function joinRoom(roomCode) {
+export async function joinRoom(roomCode, onChannel) {
   const pc = new RTCPeerConnection(rtcConfig);
 
-  const offerConfig = { offerToReceiveAudio: 1 }; // this is needed for ice for some reason
-  await pc.setLocalDescription(await pc.createOffer(offerConfig));
+  let offer = null;
+  pc.onnegotiationneeded = async () => {
+    console.log("onnegotiationneeded");
+    offer = await pc.createOffer({ offerToReceiveAudio: 1 });
+    await pc.setLocalDescription(offer);
+  };
 
-  const res = await postJson(`/join-room/${roomCode}`, pc.localDescription);
-  if (!res.ok) {
-    console.log(`Unable to join room ${await res.text()}`);
-    return;
-  }
-  await pc.setRemoteDescription(await res.json());
-
-  const candidates = [];
-  pc.onicecandidate = ({ candidate }) => {
-    candidates.push(candidate);
-    if (!candidate) {
-      postJson(`/add-ice-candidates/${roomCode}`, candidates);
+  pc.onicegatheringstatechange = ({ target }) => {
+    console.log("gathering state " + target.iceGatheringState);
+    if (target.iceGatheringState === "complete") {
+      postJson(`/join-room/${roomCode}`, offer)
+        .then((res) => {
+          if (!res.ok) {
+            console.log(`Unable to join room ${this.roomCode}}`);
+            return;
+          }
+          return res.json();
+        })
+        .then((json) => pc.setRemoteDescription(json));
     }
   };
 
-  async function pollIceCandidates() {
-    const res = await postJson(`/get-ice-candidates/${roomCode}`);
-    if (!res.ok) return;
-    let containsEndOfCandidates = false;
+  const channel = pc.createDataChannel(`room-${roomCode}`);
+  channel.onopen = () => {
+    onChannel(channel);
+  };
 
-    (await res.json()).forEach((candidate) => {
-      pc.addIceCandidate(candidate);
-      if (!candidate) {
-        containsEndOfCandidates = true;
-      }
-    });
-
-    if (!containsEndOfCandidates) {
-      setTimeout(pollIceCandidates, 1000);
-    }
-  }
-  setTimeout(pollIceCandidates, 500);
-
-  return pc.createDataChannel(`room-${roomCode}`);
+  window.pc = pc;
 }
