@@ -1,38 +1,52 @@
 import { rtcConfig, postJson } from "../common/utils.js";
 
-/**
- * @param {string} roomCode
- * @returns {RTCDataChannel}
- */
-export async function joinRoom(roomCode, onChannel) {
-  const pc = new RTCPeerConnection(rtcConfig);
+export class Client {
+  playerId = null;
+  pc = null;
+  roomCode = null;
+  clock = null;
 
-  let offer = null;
-  pc.onnegotiationneeded = async () => {
-    console.log("onnegotiationneeded");
-    offer = await pc.createOffer({ offerToReceiveAudio: 1 });
-    await pc.setLocalDescription(offer);
-  };
+  constructor() {
+    const pc = new RTCPeerConnection(rtcConfig);
 
-  pc.onicegatheringstatechange = ({ target }) => {
-    console.log("gathering state " + target.iceGatheringState);
-    if (target.iceGatheringState === "complete") {
-      postJson(`/join-room/${roomCode}`, offer)
-        .then((res) => {
-          if (!res.ok) {
-            console.log(`Unable to join room ${this.roomCode}}`);
-            return;
-          }
-          return res.json();
-        })
-        .then((json) => pc.setRemoteDescription(json));
-    }
-  };
+    let offer = null;
+    pc.onnegotiationneeded = async () => {
+      offer = await pc.createOffer({ offerToReceiveAudio: 1 });
+      await pc.setLocalDescription(offer);
+    };
 
-  const channel = pc.createDataChannel(`room-${roomCode}`);
-  channel.onopen = () => {
-    onChannel(channel);
-  };
+    pc.onicegatheringstatechange = async ({ target }) => {
+      if (target.iceGatheringState === "complete") {
+        console.log("gathering state " + target.iceGatheringState);
+        this.clock = performance.now();
+        const res = await postJson(`/join-room/${this.roomCode}`, offer);
 
-  window.pc = pc;
+        if (!res.ok) {
+          console.log(`Unable to join room ${this.roomCode}}`);
+          return;
+        }
+
+        this.playerId = document.cookie.split("=")[1];
+
+        pc.setRemoteDescription(await res.json());
+      }
+    };
+
+    this.pc = pc;
+  }
+
+  /**
+   * @param {string} roomCode
+   * @returns {RTCDataChannel}
+   */
+  async joinRoom(roomCode, onChannel) {
+    this.roomCode = roomCode;
+
+    const channel = this.pc.createDataChannel(`room-${roomCode}`);
+    channel.onopen = () => {
+      this.clock = performance.now();
+      channel.send(JSON.stringify({ type: "ping", clock: this.clock }));
+      onChannel(channel);
+    };
+  }
 }

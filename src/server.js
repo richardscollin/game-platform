@@ -44,8 +44,8 @@ app.post("/join-room/:roomCode", (req, res) => {
     return;
   }
 
-  const { type, sdp } = req.body;
-  const player = new Player(req.cookies.playerId, { type, sdp });
+  const candidate = req.body;
+  const player = new Player(req.cookies.playerId, candidate);
 
   room.addPlayer(player, (answer) => {
     console.log(`add player ${player.id}`);

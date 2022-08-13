@@ -9,7 +9,7 @@
             padding: 0 30px;
             max-width: 500px;
             border-radius: 5px;
-            height: 300px;
+            height: 500px;
         }
     </style>
 </head>
@@ -23,21 +23,31 @@
         <h2>Settings</h2>
         <input type="submit" value="Create Game Room"></input>
         <p class="current-room-code"></p>
+        <div style="width:200px" class="connect-qr"></div>
         <div>Players:</div>
         <ul class="players-list"></ul>
     </form>
 
     <script type="module">
+        import { getPublicOrigin } from "/common/utils.js";
         import { GameHost } from "/game-host/host.js";
+        import qrcodegen from "/game-host/qrcodegen.js";
 
-        function main() {
+        async function main() {
+
             const form = document.querySelector("form");
+            let publicOrigin = await getPublicOrigin();
             form.addEventListener("submit", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const gameHost = new GameHost();
-                gameHost.addEventListener("room-code", () => {
+                gameHost.addEventListener("room-code", async () => {
                     document.querySelector(".current-room-code").textContent = gameHost.roomCode;
+
+                    const qr = document.querySelector(".connect-qr");
+                    const url = publicOrigin + "/?roomCode=" + gameHost.roomCode;
+                    console.log(url);
+                    qr.innerHTML = qrcodegen.QrCode.encodeText(url, qrcodegen.QrCode.Ecc.LOW).toSvgString(4);
                 });
 
                 gameHost.addEventListener("players", () => {
@@ -46,7 +56,7 @@
 
                     for (const player of Object.values(gameHost.players)) {
                         const li = document.createElement('li')
-                        li.textContent = `Player ${player.id}:  ${!!player.channel}`;
+                        li.textContent = `Player ${player.id}:  (${player.x},${player.y}) ${!!player.channel} ${player.updates} ${player.localClock - player.remoteClock} ${player.latency}`;
                         playersList.appendChild(li);
                     }
 
@@ -54,7 +64,6 @@
 
                 window.gameHost = gameHost;
             });
-
         }
         window.addEventListener("load", main);
     </script>

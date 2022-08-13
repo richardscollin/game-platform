@@ -2,8 +2,20 @@
 <html>
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
     <title>Join a Game</title>
     <style>
+        body {
+            overflow: hidden;
+        }
+
+        #container {
+            height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .room-code-input-wrapper {
             border: 2px solid black;
             padding: 1px;
@@ -27,51 +39,82 @@
 </head>
 
 <body>
-    <div class="navbar">
-    </div>
-    <h1>
-        Join a Game
-    </h1>
-    <form>
-        <label>
-            Room Code:
-        </label>
+    <div id="container">
 
-        <span class="room-code-input-wrapper">
-            <input class="room-code-input" type="text" name="roomCode"></input>
-            <input class="join-game-button" type="submit" value="Join"></input>
-        </span>
-    </form>
-    <a class="host-game" href="host.html">Host a Game</a>
+        <div class="navbar">
+        </div>
+        <h1>
+            Join a Game
+        </h1>
+        <form>
+            <label>
+                Room Code:
+            </label>
 
-    <script type="module">
-        import { joinRoom } from "./game-client/client.js";
+            <span class="room-code-input-wrapper">
+                <input class="room-code-input" type="text" name="roomCode"></input>
+                <input class="join-game-button" type="submit" value="Join"></input>
+            </span>
+        </form>
+        <a class="host-game" href="host.html">Host a Game</a>
+        <div>
+            <h2>Current Room:</h2>
+            <p class="current-room"></p>
+        </div>
 
-        function main() {
-            const form = document.querySelector("form");
-            const input = document.querySelector(".room-code-input");
+        <script type="module">
+            import { Client } from "./game-client/client.js";
 
-            const params = new URLSearchParams(document.location.search);
-            const roomCode = params.get("roomCode");
-            if (roomCode) {
-                input.value = roomCode;
-            }
+            function main() {
+                const form = document.querySelector("form");
+                const input = document.querySelector(".room-code-input");
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+                const params = new URLSearchParams(document.location.search);
+                const roomCode = params.get("roomCode");
+                if (roomCode) {
+                    input.value = roomCode;
+                }
 
-                const roomCode = input.value;
-                await joinRoom(roomCode, (channel) => {
-                    console.log("channel " + JSON.stringify(channel))
-                    console.log("on data channel open");
-                    channel.send("pign")
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const roomCode = input.value;
+                    const client = new Client();
+                    await client.joinRoom(roomCode, (channel) => {
+                        const currentRoom = document.querySelector(".current-room");
+
+                        document.onmousemove = (e) => {
+                            channel.send(JSON.stringify({
+                                clock: performance.now(),
+                                x: e.clientX, y: e.clientY
+                            }));
+                        }
+                        document.ontouchmove = (e) => {
+                            const { changedTouches } = e;
+                            for (let touch of changedTouches) {
+                                channel.send(JSON.stringify({
+                                    clock: performance.now(),
+                                    x: touch.clientX, y: touch.clientY
+                                }));
+                            }
+                        }
+
+                        currentRoom.textContent = `${roomCode} (connected)`
+                        channel.onclose = () => {
+                            document.onmousemove = null;
+                            currentRoom.textContent = "disconnected";
+                        }
+
+                        console.log("channel " + JSON.stringify(channel))
+                        console.log("on data channel open");
+                    });
+
                 });
-
-            });
-        }
-        window.addEventListener("load", main);
-    </script>
+            }
+            window.addEventListener("load", main);
+        </script>
+    </div>
 </body>
 
 </html>

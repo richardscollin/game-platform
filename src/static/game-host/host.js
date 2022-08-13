@@ -3,13 +3,34 @@ import { rtcConfig, getWebSocketsOrigin } from "../common/utils.js";
 /* eslint-disable no-prototype-builtins */
 
 class Player {
+  updates = 0;
   id = null;
   pc = null;
   channel = null;
   iceCandidates = [];
+  localClock = null;
+  remoteClock = null;
+  #latenciesCount = 0;
+  #avgLatency = 0;
 
   constructor(playerId) {
     this.id = playerId;
+  }
+
+  get latency() {
+    return this.#avgLatency;
+  }
+
+  appendLatency(remoteNow) {
+    // const l = performance.now() - this.localClock;
+    // const r = remoteNow - this.remoteClock;
+    // const latency = r - l;
+    // todo the calculation needs to be rethought
+    const latency = (performance.now() - remoteNow) - (this.localClock - this.remoteClock);
+
+    // A_{n+1} = (x_{n+1} + n * A_n) / (n + 1)
+    const n = this.#latenciesCount++;
+    this.#avgLatency = (latency + n * this.#avgLatency) / (n + 1);
   }
 
   sendMessage(message) {
@@ -34,6 +55,9 @@ export class GameHost {
   roomCode = null;
   players = {};
   iceCandidates = {};
+  #origin = null;
+  x = null;
+  y = null;
 
   constructor() {
     this.socket = new WebSocket(`${getWebSocketsOrigin()}/create-room`);
@@ -86,7 +110,24 @@ export class GameHost {
         console.log("close");
         this.eventListeners["players"]?.forEach((cb) => cb());
       };
-      channel.onmessage = ({ message }) => player.onMessage(message);
+      player.onMessage = ({ data }) => {
+        const message = JSON.parse(data);
+        if (message.type === "ping") {
+          player.remoteClock = message.clock;
+          player.localClock = performance.now();
+          return;
+        }
+
+        player.appendLatency(message.clock);
+
+        player.x = message.x;
+        player.y = message.y;
+        this.eventListeners["players"]?.forEach((cb) => cb());
+      };
+      channel.onmessage = async (message) => {
+        player.updates++;
+        player.onMessage(message);
+      };
     };
   }
 

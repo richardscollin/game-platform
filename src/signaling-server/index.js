@@ -9,12 +9,13 @@ import { nanoid, customAlphabet } from "nanoid";
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
 class Player {
+  name = null;
+  answer = null;
+  iceCandidates = [];
+
   constructor(id, offer) {
     this.id = id ?? nanoid();
     this.offer = offer;
-    this.name = null;
-    this.answer = null;
-    this.iceCandidates = [];
   }
 }
 
