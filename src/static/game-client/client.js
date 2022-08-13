@@ -4,7 +4,6 @@ export class Client {
   playerId = null;
   pc = null;
   roomCode = null;
-  clock = null;
 
   constructor() {
     const pc = new RTCPeerConnection(rtcConfig);
@@ -18,7 +17,6 @@ export class Client {
     pc.onicegatheringstatechange = async ({ target }) => {
       if (target.iceGatheringState === "complete") {
         console.log("gathering state " + target.iceGatheringState);
-        this.clock = performance.now();
         const res = await postJson(`/join-room/${this.roomCode}`, offer);
 
         if (!res.ok) {
@@ -27,7 +25,6 @@ export class Client {
         }
 
         this.playerId = document.cookie.split("=")[1];
-
         pc.setRemoteDescription(await res.json());
       }
     };
@@ -44,9 +41,20 @@ export class Client {
 
     const channel = this.pc.createDataChannel(`room-${roomCode}`);
     channel.onopen = () => {
-      this.clock = performance.now();
-      channel.send(JSON.stringify({ type: "ping", clock: this.clock }));
       onChannel(channel);
+    };
+
+    channel.onmessage = ({ data }) => {
+      const message = JSON.parse(data);
+      if (message.type === "ping") {
+        channel.send(
+          JSON.stringify({
+            type: "pong",
+            ping: message.ping,
+            pong: performance.now(),
+          })
+        );
+      }
     };
   }
 }

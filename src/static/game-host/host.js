@@ -8,29 +8,21 @@ class Player {
   pc = null;
   channel = null;
   iceCandidates = [];
-  localClock = null;
-  remoteClock = null;
-  #latenciesCount = 0;
-  #avgLatency = 0;
+  #rttCount = 0;
+  #avgRTT = 0;
 
   constructor(playerId) {
     this.id = playerId;
   }
 
   get latency() {
-    return this.#avgLatency;
+    return this.#avgRTT / 2;
   }
 
-  appendLatency(remoteNow) {
-    // const l = performance.now() - this.localClock;
-    // const r = remoteNow - this.remoteClock;
-    // const latency = r - l;
-    // todo the calculation needs to be rethought
-    const latency = (performance.now() - remoteNow) - (this.localClock - this.remoteClock);
-
+  appendRTT(rtt) {
     // A_{n+1} = (x_{n+1} + n * A_n) / (n + 1)
-    const n = this.#latenciesCount++;
-    this.#avgLatency = (latency + n * this.#avgLatency) / (n + 1);
+    const n = this.#rttCount++;
+    this.#avgRTT = (rtt + n * this.#avgRTT) / (n + 1);
   }
 
   sendMessage(message) {
@@ -44,8 +36,16 @@ class Player {
     this.channel.send(JSON.stringify(message));
   }
 
-  onMessage(message) {
-    console.log(`player ${this.id} on message ${message}`);
+  onMessage({ data }) {
+    this.updates++;
+    const message = JSON.parse(data);
+    if (message.type === "pong") {
+      this.appendRTT(performance.now() - message.ping);
+      return;
+    }
+
+    this.x = message.x;
+    this.y = message.y;
   }
 }
 
@@ -103,30 +103,25 @@ export class GameHost {
       channel.onopen = () => {
         player.channel = channel;
         console.log("open");
+
+        setInterval(() => {
+          channel.send(
+            JSON.stringify({ type: "ping", ping: performance.now() })
+          );
+        }, 5000);
+
         this.eventListeners["players"]?.forEach((cb) => cb());
       };
+
       channel.onclose = () => {
         player.channel = null;
         console.log("close");
         this.eventListeners["players"]?.forEach((cb) => cb());
       };
-      player.onMessage = ({ data }) => {
-        const message = JSON.parse(data);
-        if (message.type === "ping") {
-          player.remoteClock = message.clock;
-          player.localClock = performance.now();
-          return;
-        }
 
-        player.appendLatency(message.clock);
-
-        player.x = message.x;
-        player.y = message.y;
-        this.eventListeners["players"]?.forEach((cb) => cb());
-      };
       channel.onmessage = async (message) => {
-        player.updates++;
         player.onMessage(message);
+        this.eventListeners["players"]?.forEach((cb) => cb());
       };
     };
   }
