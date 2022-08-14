@@ -4,6 +4,7 @@ import express from "express";
 import http from "http";
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer } from "ws";
+import { hostConfig } from "./utils.js";
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
@@ -37,6 +38,8 @@ class Room {
       const msg = JSON.parse(data);
 
       switch (msg.type) {
+        case "ping": // nop keep connection alive
+          break;
         case "answer": {
           const { answer, playerId } = msg.value;
           if (this.pendingResponses[playerId]) {
@@ -106,11 +109,12 @@ class SignalingServer {
 const app = express();
 app.use(
   cors({
-    origin: "https://richardscollin.github.io",
+    origin: hostConfig.origin,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use('/game-platform', express.static('.'));
 
 const signalingServer = new SignalingServer();
 
@@ -153,6 +157,6 @@ wsServer.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, "127.0.0.1", () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`http://localhost:${PORT}`);
 });

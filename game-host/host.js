@@ -1,4 +1,4 @@
-import { rtcConfig, getWebSocketsOrigin } from "../utils.js";
+import { rtcConfig, hostConfig } from "../utils.js";
 
 /* eslint-disable no-prototype-builtins */
 
@@ -7,7 +7,6 @@ class Player {
   id = null;
   pc = null;
   channel = null;
-  iceCandidates = [];
   #rttCount = 0;
   #avgRTT = 0;
 
@@ -54,36 +53,44 @@ export class GameHost {
   eventListeners = {};
   roomCode = null;
   players = {};
-  iceCandidates = {};
   #origin = null;
   x = null;
   y = null;
+  #pingInterval = null;
 
   constructor() {
-    this.socket = new WebSocket(`${getWebSocketsOrigin()}/create-room`);
-    this.socket.onmessage = async (event) => {
-      const msg = JSON.parse(event.data);
-
-      console.log(msg.type);
-      switch (msg.type) {
-        case "room-code":
-          this.roomCode = msg.value;
-          this.eventListeners["room-code"]?.forEach((cb) => cb());
-          break;
-        case "connect-player": {
-          const { offer, playerId } = msg.value;
-          await this.webRTC(playerId, offer, (answer) => {
-            this.sendMessage({ type: "answer", value: { answer, playerId } });
-            this.eventListeners["players"]?.forEach((cb) => cb());
-          });
-          break;
-        }
-
-        default:
-          console.log(`unknown message type: ${msg.type}`);
-          break;
-      }
+    this.socket = new WebSocket(`${hostConfig.websocket}/create-room`);
+    this.socket.onopen = () => {
+      this.#pingInterval = setInterval(() => {
+        this.sendMessage({ type: "ping" });
+      }, 1000);
     };
+    this.socket.onclose = () => (this.socket = null);
+    this.socket.onmessage = this.#onSocketMessage.bind(this);
+  }
+
+  async #onSocketMessage({ data }) {
+    const msg = JSON.parse(data);
+
+    console.log(msg.type);
+    switch (msg.type) {
+      case "room-code":
+        this.roomCode = msg.value;
+        this.eventListeners["room-code"]?.forEach((cb) => cb());
+        break;
+      case "connect-player": {
+        const { offer, playerId } = msg.value;
+        await this.webRTC(playerId, offer, (answer) => {
+          this.sendMessage({ type: "answer", value: { answer, playerId } });
+          this.eventListeners["players"]?.forEach((cb) => cb());
+        });
+        break;
+      }
+
+      default:
+        console.log(`unknown message type: ${msg.type}`);
+        break;
+    }
   }
 
   async webRTC(playerId, offer, onAnswer) {
@@ -140,6 +147,10 @@ export class GameHost {
   }
 
   sendMessage(msg) {
+    if (!this.socket) {
+      console.error("Attempting to send message on closed websocket");
+      return;
+    }
     this.socket.send(JSON.stringify(msg));
   }
 

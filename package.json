@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "lint": "eslint src",
-    "start": "nodemon signaling-server.js"
+    "start": "nodemon signaling-server.js",
+    "docs": "jsdoc --destination docs/jsdoc --recurse game-host game-client *.js"
   },
   "author": "",
   "license": "ISC",

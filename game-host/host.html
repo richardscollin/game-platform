@@ -31,14 +31,13 @@
     </form>
 
     <script type="module">
-        import { getPublicOrigin } from "../utils.js";
+        import { hostConfig } from "../utils.js";
         import { GameHost } from "./host.js";
         import qrcodegen from "./qrcodegen.js";
 
         async function main() {
 
             const form = document.querySelector("form");
-            let publicOrigin = await getPublicOrigin();
             form.addEventListener("submit", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -47,7 +46,7 @@
                     document.querySelector(".current-room-code").textContent = gameHost.roomCode;
 
                     const qr = document.querySelector(".connect-qr");
-                    const url = publicOrigin + "/?roomCode=" + gameHost.roomCode;
+                    const url = hostConfig.webRoot + "/?roomCode=" + gameHost.roomCode;
                     console.log(url);
                     qr.innerHTML = qrcodegen.QrCode.encodeText(url, qrcodegen.QrCode.Ecc.LOW).toSvgString(4);
                 });
