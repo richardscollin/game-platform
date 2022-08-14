@@ -18,7 +18,7 @@ export function postJson(url, data) {
 }
 
 export function getWebSocketsOrigin() {
-  return 'wss://richardscollin.com:3000';
+  return 'wss://richardscollin.com:9000';
   // if hosted from the same domain
   // const { protocol, hostname, port } = document.location;
   // return `${protocol === "https:" ? "wss:" : "ws:"}//${hostname}:${port}`;
