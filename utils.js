@@ -56,7 +56,7 @@ export async function getPublicOrigin() {
         pc.onicecandidate = ({ candidate }) => {
           // example:
           // candidate:0 1 UDP 2122252543 1c4cb7d2-782f-4cdf-9f6e-226a7f42ed63.local 37275 typ host
-          console.log(candidate);
+          // console.log(candidate);
           const info = candidate?.candidate?.split(" ");
           if (info && info.length > 5) {
             const { protocol, port } = document.location;

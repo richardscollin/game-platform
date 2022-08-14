@@ -5,9 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "docs": "jsdoc --readme README.md --package package.json --recurse src/",
     "lint": "eslint src",
-    "start": "nodemon src/server.js"
+    "start": "nodemon src/signaling-server.js"
   },
   "author": "",
   "license": "ISC",
