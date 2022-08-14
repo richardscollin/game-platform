@@ -5,11 +5,6 @@ import http from "http";
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer } from "ws";
 
-/**
- * @returns {string} a random all caps room code of length 4, some symbols are disallowed
- * @example
- * // returns "BACET"
- */
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
 class Player {
@@ -28,17 +23,18 @@ class Player {
  * hosts. In order to play a game, first a room must be created.
  */
 class Room {
+  pendingResponses = {};
+  players = {};
+
   constructor(hostWebsocket) {
     /**
      * @type {WebSocket.WebSocket}
      */
-    this.hostWebsocket = hostWebsocket;
-    this.pendingResponses = {};
-    this.players = {};
     this.code = generateRoomCode();
+    this.hostWebsocket = hostWebsocket;
 
-    hostWebsocket.addEventListener("message", (event) => {
-      const msg = JSON.parse(event.data);
+    hostWebsocket.addEventListener("message", ({ data }) => {
+      const msg = JSON.parse(data);
 
       switch (msg.type) {
         case "answer": {
@@ -49,10 +45,6 @@ class Room {
             console.warn("Recieved an answer without a pending offer");
           }
 
-          break;
-        }
-        case "ice": {
-          this.players[msg.value.playerId].iceCandidates = msg.value.candidates;
           break;
         }
         default:
@@ -66,7 +58,7 @@ class Room {
 
     this.pendingResponses[player.id] = onHostAnswer;
 
-    console.log("host websocket send");
+    console.log("adding player to room, awaiting response from host");
     this.hostWebsocket.send(
       JSON.stringify({
         type: "connect-player",
@@ -87,13 +79,12 @@ class Room {
 }
 
 class SignalingServer {
-  constructor() {
-    this.rooms = {};
-  }
+  rooms = {};
 
   createRoom(webSocket) {
     const room = new Room(webSocket);
     this.rooms[room.code] = room;
+    console.log(`creating room ${room.code}`);
     return room;
   }
 
