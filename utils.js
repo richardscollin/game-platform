@@ -18,8 +18,10 @@ export function postJson(url, data) {
 }
 
 export function getWebSocketsOrigin() {
-  const { protocol, hostname, port } = document.location;
-  return `${protocol === "https:" ? "wss:" : "ws:"}//${hostname}:${port}`;
+  return 'wss://richardscollin.com:3000';
+  // if hosted from the same domain
+  // const { protocol, hostname, port } = document.location;
+  // return `${protocol === "https:" ? "wss:" : "ws:"}//${hostname}:${port}`;
 }
 
 function isAllowedAddress(addr) {
