@@ -1,3 +1,8 @@
+const hostConfig = {
+  websocket: "wss://richardscollin.com:9000",
+  static: "https://richardscollin.github.io/game-platform",
+};
+
 export const rtcConfig = {
   iceServers: [
     {
@@ -18,7 +23,7 @@ export function postJson(url, data) {
 }
 
 export function getWebSocketsOrigin() {
-  return 'wss://richardscollin.com:9000';
+  return hostConfig.websocket;
   // if hosted from the same domain
   // const { protocol, hostname, port } = document.location;
   // return `${protocol === "https:" ? "wss:" : "ws:"}//${hostname}:${port}`;
@@ -40,6 +45,10 @@ function isAllowedAddress(addr) {
 }
 
 export async function getPublicOrigin() {
+  return new Promise((resolve) => {
+    resolve(hostConfig.static);
+  });
+
   return new Promise((resolve, reject) => {
     // must get user media in order to get correct ip candidates
     navigator.mediaDevices
