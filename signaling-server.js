@@ -1,8 +1,14 @@
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
 import http from "http";
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer } from "ws";
+
+const corsOptions = {
+  origin: 'https://richardscollin.github.io',
+};
+
 
 /**
  * @returns {string} a random all caps room code of length 4, some symbols are disallowed
@@ -117,7 +123,7 @@ app.use(cookieParser());
 
 const signalingServer = new SignalingServer();
   
-app.post("/join-room/:roomCode", (req, res) => {
+app.post("/join-room/:roomCode", cors(corsOptions), (req, res) => {
   console.log(`POST ${req.url} playerId=${req.cookies.playerId}`)
   const room = signalingServer.findRoom(req.params.roomCode);
 
