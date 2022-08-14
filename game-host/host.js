@@ -1,4 +1,4 @@
-import { rtcConfig, getWebSocketsOrigin } from "../common/utils.js";
+import { rtcConfig, getWebSocketsOrigin } from "../utils.js";
 
 /* eslint-disable no-prototype-builtins */
 
