@@ -12,9 +12,9 @@ import { WebSocketServer } from "ws";
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
 class Player {
-  name = null;
+  id = null;
+  offer = null;
   answer = null;
-  iceCandidates = [];
 
   constructor(id, offer) {
     this.id = id ?? nanoid();
@@ -116,29 +116,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 const signalingServer = new SignalingServer();
-
-
-app.get("/rooms", (_req, res) => {
-  res.json({ rooms: signalingServer.rooms });
-});
-
-app.post("/get-ice-candidates/:roomCode", (req, res) => {
-  const room = signalingServer.findRoom(req.params.roomCode);
-  if (!room) {
-    res.status(400).end("Invalid room code");
-    return;
-  }
-
-  const playerId = req.cookies.playerId;
-  if (!playerId) {
-    res.status(400).end("Missing required cookie playerId");
-    return;
-  }
-
-  res.json(room.players[playerId].iceCandidates).end();
-});
   
 app.post("/join-room/:roomCode", (req, res) => {
+  console.log(`POST ${req.url} playerId=${req.cookies.playerId}`)
   const room = signalingServer.findRoom(req.params.roomCode);
 
   if (!room) {

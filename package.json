@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "lint": "eslint src",
-    "start": "nodemon src/signaling-server.js"
+    "start": "nodemon signaling-server.js"
   },
   "author": "",
   "license": "ISC",
