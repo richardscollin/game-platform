@@ -16,7 +16,7 @@ export const rtcConfig = {
 
 export function postJson(url, data) {
   // console.log(`POST ${url}`);
-  return fetch(`${hostConfig.rest}/${url}`, {
+  return fetch(`${hostConfig.rest}${url}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: data ? JSON.stringify(data) : undefined,

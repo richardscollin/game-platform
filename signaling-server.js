@@ -5,11 +5,6 @@ import http from "http";
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer } from "ws";
 
-const corsOptions = {
-  origin: 'https://richardscollin.github.io',
-};
-
-
 /**
  * @returns {string} a random all caps room code of length 4, some symbols are disallowed
  * @example
@@ -118,13 +113,18 @@ class SignalingServer {
 }
 
 const app = express();
+app.use(
+  cors({
+    origin: "https://richardscollin.github.io",
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
 const signalingServer = new SignalingServer();
-  
-app.post("/join-room/:roomCode", cors(corsOptions), (req, res) => {
-  console.log(`POST ${req.url} playerId=${req.cookies.playerId}`)
+
+app.post("/join-room/:roomCode", (req, res) => {
+  console.log(`POST ${req.url} playerId=${req.cookies.playerId}`);
   const room = signalingServer.findRoom(req.params.roomCode);
 
   if (!room) {
