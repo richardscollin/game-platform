@@ -176,6 +176,6 @@ wsServer.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, "127.0.0.1", () => {
   console.log(`http://localhost:${PORT}`);
 });
