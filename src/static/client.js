@@ -2,6 +2,7 @@ import { rtcConfig, postJson } from "./utils.js";
 
 console.oLog = console.log;
 console.log = function() {
+  console.oLog(arguments);
   fetch('/log', {
     method: "POST",
     headers: {
@@ -10,6 +11,7 @@ console.log = function() {
     body: JSON.stringify([...arguments]),
   })
 }
+console.log("this is a test")
 
 export class Client {
   playerId = null;
