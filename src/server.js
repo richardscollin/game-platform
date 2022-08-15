@@ -122,6 +122,11 @@ app.use("/config.js", (_req, res) => {
 
 const signalingServer = new SignalingServer();
 
+app.post('/log', (req, res) => {
+  console.log(req.body);
+  res.status(200).end();
+});
+
 app.post("/join-room/:roomCode", (req, res) => {
   console.log(`POST ${req.url} playerId=${req.cookies.playerId}`);
   const room = signalingServer.findRoom(req.params.roomCode);
