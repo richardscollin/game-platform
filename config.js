@@ -6,9 +6,9 @@ export const hostConfig = {
 };
 
 export const iceServers = [
-  // {
-  //   urls: ["stun:richardscollin.com"],
-  // },
+  {
+    urls: ["stun:richardscollin.com"],
+  },
   {
     urls: ["turn:richardscollin.com"],
     username: "username12",

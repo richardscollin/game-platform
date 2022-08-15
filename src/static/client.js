@@ -32,8 +32,9 @@ export class Client {
     };
 
     pc.onicegatheringstatechange = async ({ target }) => {
+      console.log("gathering state " + target.iceGatheringState);
+
       if (target.iceGatheringState === "complete") {
-        console.log("gathering state " + target.iceGatheringState);
         const res = await postJson(`/join-room/${this.roomCode}`, offer);
 
         if (!res.ok) {
