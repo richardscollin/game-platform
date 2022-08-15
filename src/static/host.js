@@ -65,7 +65,10 @@ export class GameHost {
         this.sendMessage({ type: "ping" });
       }, 1000);
     };
-    this.socket.onclose = () => (this.socket = null);
+    this.socket.onclose = () => {
+      console.log(`room ${this.roomCode} websocket closed`);
+      this.socket = null;
+    }
     this.socket.onmessage = this.#onSocketMessage.bind(this);
   }
 
