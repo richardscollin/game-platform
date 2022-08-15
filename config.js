@@ -9,12 +9,12 @@ export const iceServers = [
   // {
   //   urls: ["stun:stun.l.google.com:19302"]
   // }
-  {
-    urls: ["stun:richardscollin.com"],
-  },
   // {
-  //   urls: ["turn:richardscollin.com"],
-  //   username: "username12",
-  //   credential: "password12",
+  //   urls: ["stun:richardscollin.com"],
   // },
+  {
+    urls: ["turn:richardscollin.com"],
+    username: "username12",
+    credential: "password12",
+  },
 ];
