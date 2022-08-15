@@ -2,9 +2,10 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import http from "http";
+import path from "path";
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer } from "ws";
-import { hostConfig } from "./utils.js";
+import { hostConfig } from "../config.js";
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
@@ -107,6 +108,7 @@ class SignalingServer {
 }
 
 const app = express();
+app.use("/", express.static("src/static"));
 app.use(
   cors({
     origin: hostConfig.origin,
@@ -114,7 +116,9 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
-app.use('/game-platform', express.static('.'));
+app.use("/config.js", (_req, res) => {
+  res.sendFile(path.resolve("config.js"));
+});
 
 const signalingServer = new SignalingServer();
 
@@ -149,6 +153,7 @@ const server = http.createServer(app);
 const wsServer = new WebSocketServer({ server, path: "/create-room" });
 
 wsServer.on("connection", (socket) => {
+  console.log("UPGRADE /create-room");
   const room = signalingServer.createRoom(socket);
   room.notifyRoomCode();
   socket.on("close", () => {

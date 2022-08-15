@@ -2,12 +2,13 @@
   "name": "game-platform",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.js",
   "type": "module",
   "scripts": {
     "lint": "eslint src",
-    "start": "nodemon signaling-server.js",
-    "docs": "jsdoc --destination docs/jsdoc --recurse game-host game-client *.js"
+    "dev": "nodemon",
+    "start": "node src/server.js",
+    "docs": "jsdoc --destination docs/jsdoc --recurse src"
   },
   "author": "",
   "license": "ISC",

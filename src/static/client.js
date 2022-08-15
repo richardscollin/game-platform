@@ -1,4 +1,4 @@
-import { rtcConfig, postJson } from "../utils.js";
+import { rtcConfig, postJson } from "./utils.js";
 
 export class Client {
   playerId = null;

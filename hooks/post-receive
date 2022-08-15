@@ -1,0 +1,7 @@
+#!/bin/sh
+# Deploy to production using git
+DEPLOY_DIR=/home/collin/game-platform
+GIT_WORK_TREE="${DEPLOY_DIR}" git checkout -f
+cd "${DEPLOY_DIR}"
+yarn install --production
+exit

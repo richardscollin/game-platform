@@ -1,4 +1,4 @@
-import { rtcConfig, hostConfig } from "../utils.js";
+import { rtcConfig, hostConfig } from "./utils.js";
 
 /* eslint-disable no-prototype-builtins */
 
