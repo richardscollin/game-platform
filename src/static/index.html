@@ -82,7 +82,9 @@
 
                     const roomCode = input.value;
                     const client = new Client();
+                    console.log("client created")
                     await client.joinRoom(roomCode, (channel) => {
+                        console.log("client joined room")
                         const currentRoom = document.querySelector(".current-room");
 
                         document.onmousemove = (e) => {
@@ -113,7 +115,13 @@
 
                 });
             }
-            window.addEventListener("load", main);
+            window.addEventListener("load", () => {
+                try {
+                    main();
+                } catch (e) {
+                    console.log(e);
+                }
+            });
         </script>
     </div>
 </body>
