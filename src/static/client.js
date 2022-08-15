@@ -3,6 +3,7 @@ import { rtcConfig, postJson } from "./utils.js";
 console.oLog = console.log;
 console.log = function() {
   fetch('/log', {
+    method: "POST",
     headers: {
       "content-type": "application/json"
     },
