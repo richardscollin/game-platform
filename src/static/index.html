@@ -4,6 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="main.css" rel="stylesheet">
 
     <title>Join a Game</title>
     <style>
@@ -18,24 +19,39 @@
         }
 
         .room-code-input-wrapper {
+            margin: 4px 6px;
             border: 2px solid black;
-            padding: 1px;
             border-radius: 5px;
+            height: 44px;
+            width: 100%;
+            max-width: 300px;
         }
 
         .room-code-input {
+            width: 200px;
+            float: left;
+            height: 100%;
+            font-size: 18px;
+            font-weight: bold;
             border: none;
-            margin-right: 0;
+            padding-left: 11px;
             text-transform: uppercase;
         }
 
         .join-game-button {
+            float: right;
+            height: 100%;
             font-weight: bold;
             color: white;
             background-color: rgb(69, 114, 210);
             border: none;
             padding: 5px 12px;
         }
+
+        .join-game-button:active {
+            background-color: rgb(47, 86, 169);
+        }
+
     </style>
 </head>
 
@@ -48,14 +64,13 @@
             Join a Game
         </h1>
         <form>
-            <label>
-                Room Code:
+            <label for="roomCode">
+                Room Code
             </label>
-
-            <span class="room-code-input-wrapper">
-                <input class="room-code-input" type="text" name="roomCode"></input>
-                <input class="join-game-button" type="submit" value="Join"></input>
-            </span>
+            <div class="room-code-input-wrapper">
+                <input class="room-code-input" type="text" id="roomCode" name="roomCode"></input>
+                <input class="join-game-button" type="submit" value="JOIN"></input>
+            </div>
         </form>
         <a class="host-game" href="./host.html">Host a Game</a>
         <div>
