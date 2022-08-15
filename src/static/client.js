@@ -1,17 +1,17 @@
 import { rtcConfig, postJson } from "./utils.js";
 
 console.oLog = console.log;
-console.log = function() {
+console.log = function () {
   console.oLog(arguments);
-  fetch('/log', {
+  fetch("/log", {
     method: "POST",
     headers: {
-      "content-type": "application/json"
+      "content-type": "application/json",
     },
     body: JSON.stringify([...arguments]),
-  })
-}
-console.log("this is a test")
+  });
+};
+console.log("this is a test");
 
 export class Client {
   playerId = null;
@@ -25,6 +25,10 @@ export class Client {
     pc.onnegotiationneeded = async () => {
       offer = await pc.createOffer({ offerToReceiveAudio: 1 });
       await pc.setLocalDescription(offer);
+    };
+
+    pc.onicecandidate = ({ candidate }) => {
+      console.log("onicecandidate " + JSON.stringify(candidate));
     };
 
     pc.onicegatheringstatechange = async ({ target }) => {
