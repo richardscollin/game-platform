@@ -1,5 +1,15 @@
 import { rtcConfig, postJson } from "./utils.js";
 
+console.oLog = console.log;
+console.log = function() {
+  fetch('/log', {
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify([...arguments]),
+  })
+}
+
 export class Client {
   playerId = null;
   pc = null;
