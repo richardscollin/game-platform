@@ -111,7 +111,7 @@ const app = express();
 app.use("/", express.static("src/static"));
 app.use(
   cors({
-    origin: hostConfig.origin,
+    origin: hostConfig.cors,
   })
 );
 app.use(express.json());

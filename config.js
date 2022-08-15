@@ -1,8 +1,8 @@
 export const hostConfig = {
-  cors: "http://localhost:3000",
-  rest: "http://localhost:3000",
-  websocket: "ws://localhost:3000",
-  webRoot: "http://192.168.1.104:3000/game-platform",
+  cors: [ "https://richardscollin.github.io", "http://localhost:3000", "https://game.richardscollin.com" ],
+  rest: "https://game.richardscollin.com",
+  websocket: "wss://game.richardscollin.com",
+  webRoot: "https://game.richardscollin.com",
 };
 
 export const iceServers = [
