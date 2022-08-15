@@ -24,6 +24,8 @@ export class Client {
     let offer = null;
     pc.onnegotiationneeded = async () => {
       offer = await pc.createOffer({ offerToReceiveAudio: 1 });
+      const sdp = offer.sdp;
+      offer.sdp = sdp.replace(new RegExp('a=ice\-options:trickle\\s\\n', 'g'), '')
       await pc.setLocalDescription(offer);
     };
 
