@@ -5,16 +5,7 @@
     <title>Host Game</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link href="main.css" rel="stylesheet">
-
-    <style>
-        .game-settings {
-            border: 2px solid black;
-            padding: 0 30px;
-            max-width: 500px;
-            border-radius: 5px;
-            height: 500px;
-        }
-    </style>
+    <link href="host.css" rel="stylesheet">
 </head>
 
 <body>
@@ -26,7 +17,7 @@
         <h2>Settings</h2>
         <input type="submit" value="Create Game Room"></input>
         <p class="current-room-code"></p>
-        <div style="width:200px" class="connect-qr"></div>
+        <div class="connect-qr"></div>
         <div>Players:</div>
         <ul class="players-list"></ul>
     </form>
@@ -34,37 +25,40 @@
     <script type="module">
         import { hostConfig } from "./utils.js";
         import { GameHost } from "./host.js";
-        import qrcodegen from "./qrcodegen.js";
+        import qrcodegen from "./lib/qrcodegen.js";
 
-        async function main() {
+        function main() {
+            const formRef = document.querySelector("form");
+            const roomCodeRef = document.querySelector(".current-room-code");
+            const qrRef = document.querySelector(".connect-qr");
+            const playersListRef = document.querySelector(".players-list");
 
-            const form = document.querySelector("form");
-            form.addEventListener("submit", (e) => {
+            formRef.addEventListener("submit", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const gameHost = new GameHost();
-                gameHost.addEventListener("room-code", async () => {
-                    document.querySelector(".current-room-code").textContent = gameHost.roomCode;
 
-                    const qr = document.querySelector(".connect-qr");
-                    const url = hostConfig.webRoot + "/?roomCode=" + gameHost.roomCode;
-                    console.log(url);
-                    qr.innerHTML = qrcodegen.QrCode.encodeText(url, qrcodegen.QrCode.Ecc.LOW).toSvgString(4);
-                });
+                const gameHost = new GameHost(
+                    function onRoomCode(roomCode) {
+                        roomCodeRef.textContent = roomCode;
+                        const url = hostConfig.webRoot + "/?roomCode=" + roomCode;
+                        console.log(url);
+                        qrRef.innerHTML = qrcodegen.QrCode.encodeText(
+                            url,
+                            qrcodegen.QrCode.Ecc.LOW
+                        ).toSvgString(4);
+                    },
+                    function onPlayers() {
+                        playersListRef.innerHTML = "";
 
-                gameHost.addEventListener("players", () => {
-                    const playersList = document.querySelector(".players-list");
-                    playersList.innerHTML = "";
-
-                    for (const player of Object.values(gameHost.players)) {
-                        const li = document.createElement('li')
-                        li.textContent = `Player ${player.id}:  (${player.x},${player.y}) ${!!player.channel} ${player.updates} ${player.localClock - player.remoteClock} ${player.latency}`;
-                        playersList.appendChild(li);
+                        for (const player of Object.values(gameHost.players)) {
+                            const li = document.createElement("li");
+                            li.textContent = `Player ${player.id}:  (${player.x},${player.y
+                                }) ${!!player.channel} ${player.updates} ${player.localClock - player.remoteClock
+                                } ${player.latency}`;
+                            playersListRef.appendChild(li);
+                        }
                     }
-
-                });
-
-                window.gameHost = gameHost;
+                );
             });
         }
         window.addEventListener("load", main);

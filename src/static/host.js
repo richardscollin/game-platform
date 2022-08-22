@@ -50,15 +50,22 @@ class Player {
 
 export class GameHost {
   socket = null;
-  eventListeners = {};
   roomCode = null;
   players = {};
+  onroomcode;
+  onplayers;
   #origin = null;
   x = null;
   y = null;
   #pingInterval = null;
 
-  constructor() {
+  /**
+   * @param {onRoomCodeCallback} onroomcode
+   * @param {onPlayersCallback} onplayers
+   */
+  constructor(onroomcode, onplayers) {
+    this.onplayers = onplayers;
+    this.onroomcode = onroomcode;
     this.socket = new WebSocket(`${hostConfig.websocket}/create-room`);
     this.socket.onopen = () => {
       this.#pingInterval = setInterval(() => {
@@ -68,9 +75,14 @@ export class GameHost {
     this.socket.onclose = () => {
       console.log(`room ${this.roomCode} websocket closed`);
       this.socket = null;
-    }
+    };
     this.socket.onmessage = this.#onSocketMessage.bind(this);
   }
+  /**
+   * This callback is displayed as part of the Requester class.
+   * @callback GameHost~onRoomCodeCallback
+   * @param {string} roomCode
+   */
 
   async #onSocketMessage({ data }) {
     const msg = JSON.parse(data);
@@ -79,13 +91,13 @@ export class GameHost {
     switch (msg.type) {
       case "room-code":
         this.roomCode = msg.value;
-        this.eventListeners["room-code"]?.forEach((cb) => cb());
+        this.onroomcode(this.roomCode);
         break;
       case "connect-player": {
         const { offer, playerId } = msg.value;
         await this.webRTC(playerId, offer, (answer) => {
           this.sendMessage({ type: "answer", value: { answer, playerId } });
-          this.eventListeners["players"]?.forEach((cb) => cb());
+          this.onplayers();
         });
         break;
       }
@@ -120,18 +132,18 @@ export class GameHost {
           );
         }, 5000);
 
-        this.eventListeners["players"]?.forEach((cb) => cb());
+        this.onplayers();
       };
 
       channel.onclose = () => {
         player.channel = null;
         console.log("close");
-        this.eventListeners["players"]?.forEach((cb) => cb());
+        this.onplayers();
       };
 
       channel.onmessage = async (message) => {
         player.onMessage(message);
-        this.eventListeners["players"]?.forEach((cb) => cb());
+        this.onplayers();
       };
     };
   }
@@ -155,12 +167,5 @@ export class GameHost {
       return;
     }
     this.socket.send(JSON.stringify(msg));
-  }
-
-  addEventListener(type, cb) {
-    if (!this.eventListeners.hasOwnProperty(type)) {
-      this.eventListeners[type] = [];
-    }
-    this.eventListeners[type].push(cb);
   }
 }

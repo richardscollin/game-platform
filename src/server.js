@@ -13,6 +13,7 @@ class Player {
   id = null;
   offer = null;
   answer = null;
+  hostIce
 
   constructor(id, offer) {
     this.id = id ?? nanoid();

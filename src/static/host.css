@@ -1,0 +1,11 @@
+.game-settings {
+    border: 2px solid black;
+    padding: 0 30px;
+    max-width: 500px;
+    border-radius: 5px;
+    height: 500px;
+}
+
+.connect-qr {
+    width: 200px;
+}
