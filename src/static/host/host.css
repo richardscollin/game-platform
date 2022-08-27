@@ -1,0 +1,45 @@
+@import url("../components/notifier/notification.css");
+
+:root {
+    --bottom-panel-height: 150px;
+    --bottom-panel-padding-y: 10px;
+}
+
+.main-content {
+    height: calc(100vh - var(--bottom-panel-height));
+    overflow: hidden;
+}
+
+.game-settings {
+    padding: 0 30px;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 5px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bottom-panel {
+    width: 100%;
+    padding: var(--bottom-panel-padding-y);
+    border-top: 1px solid black;
+    display: flex;
+    gap: var(--bottom-panel-padding-y);
+    justify-content: space-between;
+    overflow: hidden;
+    height: var(--bottom-panel-height);
+}
+
+.mini-qr {
+    flex-shrink: 0;
+    height: 100%;
+    width: 300px;
+}
+
+.connected-players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}

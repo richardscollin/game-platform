@@ -2,7 +2,7 @@ body {
     overflow: hidden;
 }
 
-#container {
+#touch-wrap-container {
     height: 100vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;

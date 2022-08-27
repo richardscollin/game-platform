@@ -29,12 +29,12 @@ there
         display: grid;
         grid-auto-columns: 272px;
         grid-auto-flow: column;
-        grid-gap: 4px;
+        grid-gap: 2px;
         height: 100vh;
         overflow: auto;
     }
     .kanban > div {
-        outline: solid 4px;
+        outline: solid 2px;
         padding: 0 6px;
     }
     .kanban > div::before {

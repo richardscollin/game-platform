@@ -7,11 +7,9 @@ export const hostConfig = {
 
 export const iceServers = [
   {
-    urls: ["stun:richardscollin.com"],
+    urls: ["stun:coturn.local"],
   },
   {
-    urls: ["turn:richardscollin.com"],
-    username: "username12",
-    credential: "password12",
+    urls: ["turn:coturn.local"],
   },
 ];

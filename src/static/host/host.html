@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Host Game</title>
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <link href="../lib/normalize.css" rel="stylesheet">
+    <link href="../main.css" rel="stylesheet">
+    <link href="host.css" rel="stylesheet">
+    <script src="host.js" type="module"></script>
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="center-child">
+            <h1 style="font-size: 60px">Patty Ball</h1>
+            <div>
+                <div class="game-settings">
+                    <ul class="players-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-panel">
+        <div class="notification-tray"></div>
+
+        <wifi-qr ssid="collin" password="hunter2"></wifi-qr>
+        <div class="connected-players">
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+            <player-info name="collin" color="purple" status="connected"></player-info>
+        </div>
+        <room-qr class="mini-qr" code="ABCD"></room-qr>
+    </div>
+</body>
+
+</html>

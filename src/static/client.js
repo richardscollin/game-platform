@@ -1,3 +1,6 @@
+/**
+ * @module client
+ */
 import { rtcConfig, postJson } from "./utils.js";
 
 console.oLog = console.log;
@@ -13,10 +16,14 @@ console.log = function () {
 };
 console.log("this is a test");
 
-export class Client {
-  playerId = null;
-  pc = null;
-  roomCode = null;
+/**
+ * hello
+ */
+class Client {
+  /** @type {?string} */ playerId = null;
+  /** @type {RTCPeerConnection} */ pc;
+  /** @type {?string} */ roomCode = null;
+  /** @type {RTCDataChannel} */ #channel;
 
   constructor() {
     const pc = new RTCPeerConnection(rtcConfig);
@@ -50,29 +57,95 @@ export class Client {
     this.pc = pc;
   }
 
+  sendHost(message) {
+    if (!this.#channel) {
+      console.log("Attempting send on closed channel");
+      return;
+    }
+    this.#channel.send(JSON.stringify(message));
+  }
+
   /**
    * @param {string} roomCode
-   * @returns {RTCDataChannel}
+   * @param {function} onopen
+   * @param {function} onclose
    */
-  async joinRoom(roomCode, onChannel) {
+  async joinRoom(roomCode, onopen, onclose) {
     this.roomCode = roomCode;
 
-    const channel = this.pc.createDataChannel(`room-${roomCode}`);
-    channel.onopen = () => {
-      onChannel(channel);
+    this.#channel = this.pc.createDataChannel(`room-${roomCode}`);
+    this.#channel.onopen = () => {
+      console.log("channel " + JSON.stringify(this.#channel));
+      console.log("on data channel open");
+      onopen();
+    };
+    this.#channel.onclose = () => {
+      console.log("channel " + JSON.stringify(this.#channel));
+      console.log("on data channel open");
+      onclose();
     };
 
-    channel.onmessage = ({ data }) => {
+    this.#channel.onmessage = ({ data }) => {
       const message = JSON.parse(data);
       if (message.type === "ping") {
-        channel.send(
-          JSON.stringify({
-            type: "pong",
-            ping: message.ping,
-            pong: performance.now(),
-          })
-        );
+        this.sendHost({
+          type: "pong",
+          ping: message.ping,
+          pong: performance.now(),
+        });
       }
     };
   }
 }
+
+export function main() {
+  const form = document.querySelector("form");
+  /** @type {HTMLInputElement} */
+  const input = document.querySelector(".room-code-input");
+  const currentRoomRef = document.querySelector(".current-room");
+
+  const params = new URLSearchParams(document.location.search);
+  const roomCode = params.get("roomCode");
+  if (roomCode) {
+    input.value = roomCode;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const roomCode = input.value;
+    const client = new Client();
+    console.log("client created");
+    await client.joinRoom(
+      roomCode,
+      function onJoin() {
+        currentRoomRef.textContent = `${roomCode} (connected)`;
+
+        document.onmousemove = (e) => {
+          client.sendHost({
+            clock: performance.now(),
+            x: e.clientX,
+            y: e.clientY,
+          });
+        };
+
+        document.ontouchmove = ({ changedTouches }) => {
+          for (let touch of changedTouches) {
+            client.sendHost({
+              clock: performance.now(),
+              x: touch.clientX,
+              y: touch.clientY,
+            });
+          }
+        };
+      },
+      function onLeave() {
+        document.onmousemove = null;
+        document.ontouchmove = null;
+        currentRoomRef.textContent = "disconnected";
+      }
+    );
+  });
+}
+main();

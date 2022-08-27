@@ -1,5 +1,19 @@
-@import "lib/normalize.css";
+:root {
+    --default-border-radius: 5px;
+    --default-box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
+}
 
 * {
     box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.center-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }

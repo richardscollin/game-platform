@@ -4,93 +4,31 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <title>Join a Game</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <link href="lib/normalize.css" rel="stylesheet">
     <link href="main.css" rel="stylesheet">
     <link href="client.css" rel="stylesheet">
-
-    <script type="module">
-        import { Client } from "./client.js";
-
-        function main() {
-            const form = document.querySelector("form");
-            const input = document.querySelector(".room-code-input");
-
-            const params = new URLSearchParams(document.location.search);
-            const roomCode = params.get("roomCode");
-            if (roomCode) {
-                input.value = roomCode;
-            }
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const roomCode = input.value;
-                const client = new Client();
-                console.log("client created")
-                await client.joinRoom(roomCode, (channel) => {
-                    console.log("client joined room")
-                    const currentRoom = document.querySelector(".current-room");
-
-                    document.onmousemove = (e) => {
-                        channel.send(JSON.stringify({
-                            clock: performance.now(),
-                            x: e.clientX, y: e.clientY
-                        }));
-                    }
-                    document.ontouchmove = (e) => {
-                        const { changedTouches } = e;
-                        for (let touch of changedTouches) {
-                            channel.send(JSON.stringify({
-                                clock: performance.now(),
-                                x: touch.clientX, y: touch.clientY
-                            }));
-                        }
-                    }
-
-                    currentRoom.textContent = `${roomCode} (connected)`
-                    channel.onclose = () => {
-                        document.onmousemove = null;
-                        currentRoom.textContent = "disconnected";
-                    }
-
-                    console.log("channel " + JSON.stringify(channel))
-                    console.log("on data channel open");
-                });
-
-            });
-        }
-        try {
-            main();
-        } catch (e) {
-            console.log(e);
-        }
-    </script>
+    <script src="client.js" type="module"></script>
 </head>
 
 <body>
-    <div id="container">
-
-        <div class="navbar">
-        </div>
-        <h1>
-            Join a Game
-        </h1>
-        <form>
-            <label for="roomCode">
-                Room Code
-            </label>
-            <div class="room-code-input-wrapper">
-                <input class="room-code-input" type="text" id="roomCode" name="roomCode"></input>
-                <input class="join-game-button" type="submit" value="JOIN"></input>
+    <div id="touch-wrap-container">
+        <div class="center-child">
+            <h1>Join Game</h1>
+            <div>
+                <form>
+                    <div class="room-code-input-wrapper">
+                        <input class="room-code-input" type="text" id="roomCode" name="roomCode"></input>
+                        <input class="join-game-button" type="submit" value="JOIN"></input>
+                    </div>
+                </form>
+                <a class="host-game" href="host/host.html">Host a Game</a>
+                <div>
+                    <h2>Current Room:</h2>
+                    <p class="current-room"></p>
+                </div>
             </div>
-        </form>
-        <a class="host-game" href="host.html">Host a Game</a>
-        <div>
-            <h2>Current Room:</h2>
-            <p class="current-room"></p>
         </div>
-
     </div>
 </body>
 

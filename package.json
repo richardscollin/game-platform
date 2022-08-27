@@ -7,9 +7,10 @@
   "private": true,
   "scripts": {
     "lint": "eslint src",
-    "dev": "nodemon",
+    "coturn": "docker run -d --network=host --mount type=tmpfs,destination=/var/lib/coturn coturn/coturn",
+    "dev": "nodemon -i docs/jsdoc --exec 'yarn docs && yarn start'",
     "start": "node src/server.js",
-    "docs": "jsdoc --destination docs/jsdoc --recurse src"
+    "docs": "jsdoc --configure .jsdocrc"
   },
   "browserslist": [
     "last 2 Chrome versions",
@@ -25,13 +26,39 @@
     "eslint-plugin-compat": "^4.0.2",
     "eslint-plugin-html": "^7.1.0",
     "jsdoc": "^3.6.11",
-    "nodemon": "^2.0.19"
+    "nodemon": "^2.0.19",
+    "swagger-jsdoc": "^6.2.5",
+    "swagger-ui-express": "^4.5.0",
+    "yaml": "^2.1.1"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "nanoid": "^4.0.0",
     "ws": "^8.8.1"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es2021": true,
+      "node": true
+    },
+    "plugins": [
+      "eslint-plugin-html"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:compat/recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    },
+    "ignorePatterns": [
+      "qrcodegen.js"
+    ],
+    "rules": {}
   }
 }

@@ -1,20 +1,15 @@
 export const hostConfig = {
-  cors: [ "https://richardscollin.github.io", "http://localhost:3000", "https://game.richardscollin.com" ],
-  rest: "https://game.richardscollin.com",
-  websocket: "wss://game.richardscollin.com",
-  webRoot: "https://game.richardscollin.com",
+  cors: "http://localhost:3000",
+  rest: "http://localhost:3000",
+  websocket: "ws://localhost:3000",
+  webRoot: "http://192.168.1.104:3000",
 };
 
 export const iceServers = [
   {
-    urls: ["stun:stun.l.google.com:19302"]
-  }
-  // {
-  //   urls: ["stun:richardscollin.com"],
-  // },
-  // {
-  //   urls: ["turn:richardscollin.com"],
-  //   username: "username12",
-  //   credential: "password12",
-  // },
+    urls: ["stun:192.168.1.104"],
+  },
+  {
+    urls: ["turn:192.168.1.104"],
+  },
 ];

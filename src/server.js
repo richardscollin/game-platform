@@ -1,8 +1,15 @@
+/**
+ * @module
+ */
+import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import fs from "fs";
 import http from "http";
 import path from "path";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc"; // dev only
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer } from "ws";
 import { hostConfig } from "../config.js";
@@ -13,7 +20,7 @@ class Player {
   id = null;
   offer = null;
   answer = null;
-  hostIce
+  hostIce;
 
   constructor(id, offer) {
     this.id = id ?? nanoid();
@@ -123,11 +130,20 @@ app.use("/config.js", (_req, res) => {
 
 const signalingServer = new SignalingServer();
 
-app.post('/log', (req, res) => {
+app.post("/log", (req, res) => {
   console.log(req.body);
   res.status(200).end();
 });
 
+/**
+ * @openapi
+ * /join-room/:
+ *   post:
+ *     tags: ["room"]
+ *     responses:
+ *       200:
+ *         description: Hello World
+ */
 app.post("/join-room/:roomCode", (req, res) => {
   console.log(`POST ${req.url} playerId=${req.cookies.playerId}`);
   const room = signalingServer.findRoom(req.params.roomCode);
@@ -168,6 +184,34 @@ wsServer.on("connection", (socket) => {
   });
 });
 
+const myPackage = JSON.parse(fs.readFileSync("package.json"));
+app.use("/docs", express.static("docs/jsdoc"));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(
+    swaggerJsdoc({
+      definition: {
+        openapi: "3.0.0",
+        info: {
+          version: myPackage.version,
+        },
+      },
+      apis: ["src/server.js"],
+    }),
+    {
+      customCss: `
+      body {
+        background: unset;
+      }
+      .swagger-ui .topbar {
+        display: none
+      }`,
+    }
+  )
+);
+
 server.listen(PORT, "0.0.0.0", () => {
+  console.log(process.env.NODE_ENV);
   console.log(`http://localhost:${PORT}`);
 });
