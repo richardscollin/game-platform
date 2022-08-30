@@ -6,13 +6,15 @@ import { hostConfig } from "../../config.js";
 import { css, html, cloneTemplate, BaseElement } from "../component-utils.js";
 
 html`<template id="room-qr-template">
-<div class="room-qr">
+  <div class="room-qr">
     <div class="room-code">
-        Room code
-        <div class="room-code-text"></div>
+      <div class="step-2">STEP 2</div>
+      <div class="connection-state">X</div>
+      Room Code
+      <div class="room-code-text"></div>
     </div>
     <qr-code></qr-code>
-</div>
+  </div>
 </template>`;
 
 css`
@@ -30,22 +32,44 @@ css`
     font-weight: bold;
     font-size: 40px;
   }
+  .room-qr .step-2 {
+    font-weight: bold;
+    font-size: 40px;
+  }
 `;
 
 customElements.define(
   "room-qr",
   class extends BaseElement {
-    static observedAttributes = ["code"];
+    #ready = false;
+    #code;
+    #status = "";
+    static observedAttributes = ["status", "code"];
 
-    constructor() {
-      super();
-      this.innerHTML = cloneTemplate("room-qr-template").outerHTML;
+    connectedCallback() {
+      const root = cloneTemplate("room-qr-template");
+      this.#ready = true;
+      this.update(root);
+      this.innerHTML = root.outerHTML;
+    }
+
+    update(root) {
+      if (!this.#ready) return;
+      root = root || this;
+      const url = hostConfig.webRoot + "/?roomCode=" + this.#code;
+      root.querySelector(".room-code-text").innerText = this.#code;
+      root.querySelector("qr-code").setAttribute("value", url);
+      root.querySelector(".connection-state").innerText = this.#status;
     }
 
     set code(newValue) {
-      const url = hostConfig.webRoot + "/?roomCode=" + newValue;
-      this.querySelector(".room-code-text").innerText = newValue;
-      this.querySelector("qr-code").setAttribute("value", url);
+      this.#code = newValue;
+      this.update();
+    }
+
+    set status(newValue) {
+      this.#status = newValue;
+      this.update();
     }
   }
 );

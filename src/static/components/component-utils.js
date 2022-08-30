@@ -18,11 +18,6 @@ export function cloneTemplate(cssId) {
 }
 
 export class BaseElement extends HTMLElement {
-  constructor() {
-    super();
-    // this.innerHTML = cloneTemplate("player-template").outerHTML;
-  }
-
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) {
       this[name] = newValue;

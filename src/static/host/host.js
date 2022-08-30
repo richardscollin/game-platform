@@ -24,8 +24,9 @@ class Player {
   /**
    * @param {string} playerId
    */
-  constructor(playerId) {
+  constructor(playerId, color) {
     this.id = playerId;
+    this.color = color;
   }
 
   get latency() {
@@ -73,13 +74,15 @@ class Player {
 class GameHost {
   /** @type {?WebSocket} */
   socket = null;
+  onRoomDisconnect = () => {};
   /** @type {?string} */
   roomCode = null;
   players = {};
   /** @type {GameHost~onRoomCodeCallback} */
   #onroomcode;
-  /** @type {function} */
-  #onplayers;
+  /** @type {function} */ #onplayers;
+  /** @type {function} */ #onplayerconnect;
+  /** @type {function} */ #onplayerdisconnect;
   #origin = null;
   #pingInterval = null;
   /** @type {Notifier} */
@@ -94,25 +97,34 @@ class GameHost {
   /**
    * @param {GameHost~onRoomCodeCallback} onroomcode
    * @param {function():void} onplayers
+   * @param {function(Player):void} onplayerconnect
+   * @param {function(Player):void} onplayerdisconnect
    */
-  constructor(onroomcode, onplayers) {
+  constructor(onroomcode, onplayers, onplayerconnect, onplayerdisconnect) {
     this.#notifier = new Notifier();
     this.#onplayers = onplayers;
     this.#onroomcode = onroomcode;
+    this.#onplayerconnect = onplayerconnect;
+    this.#onplayerdisconnect = onplayerdisconnect;
     this.socket = new WebSocket(`${hostConfig.websocket}/create-room`);
-    this.socket.onopen = () => {
-      this.#notifier.notify("Server Connected", "Joined room", 1000, "green");
-      this.#pingInterval = setInterval(() => {
-        this.sendMessage({ type: "ping" });
-      }, 1000);
-    };
-    this.socket.onclose = () => {
-      const message = `room ${this.roomCode} websocket closed`;
-      this.#notifier.notify("Disconnected", message, 5000, "red");
-      console.log(message);
-      this.socket = null;
-    };
+    this.socket.onopen = this.#onSocketOpen.bind(this);
+    this.socket.onclose = this.#onSocketClose.bind(this);
     this.socket.onmessage = this.#onSocketMessage.bind(this);
+  }
+
+  #onSocketOpen() {
+    this.#notifier.notify("Server Connected", "Joined room", 1000, "green");
+    this.#pingInterval = setInterval(() => {
+      this.sendMessage({ type: "ping" });
+    }, 1000);
+  }
+
+  #onSocketClose() {
+    const message = `room ${this.roomCode} websocket closed`;
+    this.#notifier.notify("Disconnected", message, 5000, "red");
+    this.onRoomDisconnect();
+    console.log(message);
+    this.socket = null;
   }
 
   async #onSocketMessage({ data }) {
@@ -125,8 +137,8 @@ class GameHost {
         this.#onroomcode(this.roomCode);
         break;
       case "connect-player": {
-        const { offer, playerId } = msg.value;
-        await this.webRTC(playerId, offer, (answer) => {
+        const { offer, playerId, color } = msg.value;
+        await this.webRTC(playerId, offer, color, (answer) => {
           this.sendMessage({ type: "answer", value: { answer, playerId } });
           this.#onplayers();
         });
@@ -139,9 +151,9 @@ class GameHost {
     }
   }
 
-  async webRTC(playerId, offer, onAnswer) {
+  async webRTC(playerId, offer, color, onAnswer) {
     const pc = new RTCPeerConnection(rtcConfig);
-    const player = this.getOrCreatePlayer(playerId, pc);
+    const player = this.getOrCreatePlayer(playerId, pc, color);
 
     pc.onicegatheringstatechange = async ({ target }) => {
       if (target.iceGatheringState === "complete") {
@@ -169,12 +181,14 @@ class GameHost {
         }, 5000);
 
         this.#onplayers();
+        this.#onplayerconnect(player);
       };
 
       channel.onclose = () => {
         player.channel = null;
         console.log("close");
         this.#onplayers();
+        this.#onplayerdisconnect(player);
       };
 
       channel.onmessage = async (message) => {
@@ -189,9 +203,9 @@ class GameHost {
    * @param {?RTCPeerConnection} peerConnection
    * @returns {Player} the current player with that playerId or a newly create player
    */
-  getOrCreatePlayer(playerId, peerConnection) {
+  getOrCreatePlayer(playerId, peerConnection, color) {
     if (!this.players[playerId]) {
-      this.players[playerId] = new Player(playerId);
+      this.players[playerId] = new Player(playerId, color);
     }
     const player = this.players[playerId];
 
@@ -214,7 +228,9 @@ class GameHost {
 function main() {
   const gameHost = new GameHost(
     function onRoomCode(roomCode) {
-      document.querySelector("room-qr").setAttribute("code", roomCode);
+      const roomQRRef = document.querySelector("room-qr")
+      roomQRRef.setAttribute("code", roomCode);
+      roomQRRef.setAttribute("status", "connected");
     },
     function onPlayers() {
       const playersListRef = document.querySelector(".players-list");
@@ -227,7 +243,28 @@ function main() {
           })
         );
       }
+    },
+    function onPlayerConnect(player) {
+      const connectedPlayersRef = document.querySelector(".connected-players");
+      const playerInfo = document.createElement("player-info");
+
+      playerInfo.setAttribute("name", player.id);
+      playerInfo.setAttribute("color", player.color);
+      playerInfo.setAttribute("status", "connected");
+
+      connectedPlayersRef.appendChild(playerInfo);
+    },
+    function onPlayerDisconnect(player) {
+      const connectedPlayersRef = document.querySelector(".connected-players");
+      const playerRef = connectedPlayersRef.querySelector(
+        `[name="${player.id}"]`
+      );
+      playerRef.setAttribute("status", "disconnected");
     }
   );
+
+  gameHost.onRoomDisconnect = () => {
+    document.querySelector("room-qr").setAttribute("status", "disconnected");
+  }
 }
 main();

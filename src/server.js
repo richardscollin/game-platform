@@ -20,6 +20,7 @@ class Player {
   id = null;
   offer = null;
   answer = null;
+  color = null;
   hostIce;
 
   constructor(id, offer) {
@@ -67,6 +68,7 @@ class Room {
 
   addPlayer(player, onHostAnswer) {
     this.players[player.id] = player;
+    player.color = this.randomColor();
 
     this.pendingResponses[player.id] = onHostAnswer;
 
@@ -74,7 +76,7 @@ class Room {
     this.hostWebsocket.send(
       JSON.stringify({
         type: "connect-player",
-        value: { playerId: player.id, offer: player.offer },
+        value: { playerId: player.id, color: player.color, offer: player.offer },
       })
     );
   }
@@ -88,6 +90,20 @@ class Room {
       JSON.stringify({ type: "room-code", value: this.code })
     );
   }
+
+  randomColor() {
+    // todo make unique
+    const colors = [
+      "#DC2626", // red
+      "#EA580C", // orange
+      "#CA8A04", // yellow
+      "#2563EB", // blue
+      "#C026D3", // purple
+      "#F472B6", // pink
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
 }
 
 class SignalingServer {
@@ -166,7 +182,7 @@ app.post("/join-room/:roomCode", (req, res) => {
 
     player.answer = answer;
     res.cookie("playerId", player.id, { sameSite: "strict" });
-    res.json(answer).end();
+    res.json({ answer, color: player.color }).end();
   });
 });
 

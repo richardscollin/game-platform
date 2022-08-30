@@ -20,6 +20,9 @@ css`
   .player-name {
     font-weight: bold;
     font-size: 20px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .player-connection-status {
@@ -47,30 +50,42 @@ html`
 
 export class Player extends BaseElement {
   static observedAttributes = ["name", "color", "status"];
+  #ready = false;
   #name;
+  #status;
   #color;
 
-  constructor() {
-    super();
-    this.innerHTML = cloneTemplate("player-template").outerHTML;
+  connectedCallback() {
+    const root = cloneTemplate("player-template");
+    this.#ready = true;
+    this.update(root);
+    this.innerHTML = root.outerHTML;
+  }
+
+  /** @param {HTMLElement} root */
+  update(root) {
+    if (!this.#ready) return;
+    root.querySelector(".player-name").textContent = this.#name;
+    root.querySelector(".player-connection-status").textContent = this.#status;
   }
 
   set name(newValue) {
     this.#name = newValue;
-    this.querySelector(".player-name").textContent = newValue;
+    this.update(this);
   }
 
   set color(newValue) {
     this.#color = newValue;
     this.style.setProperty("--player-color", newValue);
+    this.update(this);
   }
 
   set status(newValue) {
     if (!["connected", "disconnected"].includes(newValue)) {
       throw `Player ${this.#name} invalid connection status ${newValue}`;
     }
+    this.#status = newValue;
 
-    this.querySelector(".player-connection-status").textContent = newValue;
     this.style.setProperty(
       "--player-connection-color",
       {
@@ -78,6 +93,7 @@ export class Player extends BaseElement {
         disconnected: "red",
       }[newValue]
     );
+    this.update(this);
   }
 }
 

@@ -1,15 +1,13 @@
+const ip = "192.168.1.104";
 export const hostConfig = {
-  cors: "http://localhost:3000",
-  rest: "http://localhost:3000",
-  websocket: "ws://localhost:3000",
-  webRoot: "http://192.168.1.104:3000",
+  cors: [`http://${ip}:3000`, 'http://localhost:3000'],
+  rest: `http://${ip}:3000`,
+  websocket: `ws://${ip}:3000`,
+  webRoot: `http://${ip}:3000`,
 };
 
 export const iceServers = [
   {
-    urls: ["stun:192.168.1.104"],
-  },
-  {
-    urls: ["turn:192.168.1.104"],
+    urls: ["stun:stun.l.google.com:19302"],
   },
 ];

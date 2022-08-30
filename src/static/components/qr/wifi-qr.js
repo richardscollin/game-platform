@@ -26,7 +26,6 @@ css`
     padding: 2px;
     border-radius: 20%;
   }
-
 `;
 
 customElements.define(
@@ -36,19 +35,17 @@ customElements.define(
     #ssid = "";
     #password = "";
 
-    constructor() {
-      super();
+    connectedCallback() {
       this.innerHTML = cloneTemplate("wifi-qr-template").outerHTML;
+      this.updateQR();
     }
 
     set ssid(newValue) {
       this.#ssid = newValue;
-      this.updateQR();
     }
 
     set password(newValue) {
       this.#password = newValue;
-      this.updateQR();
     }
 
     updateQR() {

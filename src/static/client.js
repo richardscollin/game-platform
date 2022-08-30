@@ -1,7 +1,7 @@
 /**
  * @module client
  */
-import { rtcConfig, postJson } from "./utils.js";
+import { rtcConfig, postJson, debounce } from "./utils.js";
 
 console.oLog = console.log;
 console.log = function () {
@@ -24,6 +24,13 @@ class Client {
   /** @type {RTCPeerConnection} */ pc;
   /** @type {?string} */ roomCode = null;
   /** @type {RTCDataChannel} */ #channel;
+
+  set color(value) {
+    document.documentElement.style.setProperty("--player-color", value);
+    document
+      .querySelector("meta[name=theme-color]")
+      .setAttribute("content", value);
+  }
 
   constructor() {
     const pc = new RTCPeerConnection(rtcConfig);
@@ -50,11 +57,25 @@ class Client {
         }
 
         this.playerId = document.cookie.split("=")[1];
-        pc.setRemoteDescription(await res.json());
+
+        const data = await res.json();
+        const { answer, color } = data;
+        this.color = color;
+        pc.setRemoteDescription(answer);
       }
     };
 
     this.pc = pc;
+    this.createBeacon();
+  }
+
+  createBeacon() {
+    document.addEventListener('visibilitychange', () => {
+      console.log("visibility changed " + document.visibilityState)
+      if (document.visibilityState === 'hidden') {
+        navigator.sendBeacon('/log', JSON.stringify({beacon: true}));
+      }
+    });
   }
 
   sendHost(message) {
@@ -98,7 +119,17 @@ class Client {
   }
 }
 
+function appHeight() {
+  document.documentElement.style.setProperty(
+    "--app-height",
+    `${window.innerHeight}px`
+  );
+}
+window.addEventListener("resize", appHeight);
+
 export function main() {
+  appHeight();
+
   const form = document.querySelector("form");
   /** @type {HTMLInputElement} */
   const input = document.querySelector(".room-code-input");
@@ -122,27 +153,16 @@ export function main() {
       function onJoin() {
         currentRoomRef.textContent = `${roomCode} (connected)`;
 
-        document.onmousemove = (e) => {
+        document.onpointermove = (e) => {
           client.sendHost({
             clock: performance.now(),
             x: e.clientX,
             y: e.clientY,
           });
         };
-
-        document.ontouchmove = ({ changedTouches }) => {
-          for (let touch of changedTouches) {
-            client.sendHost({
-              clock: performance.now(),
-              x: touch.clientX,
-              y: touch.clientY,
-            });
-          }
-        };
       },
       function onLeave() {
-        document.onmousemove = null;
-        document.ontouchmove = null;
+        document.onpointermove = null;
         currentRoomRef.textContent = "disconnected";
       }
     );

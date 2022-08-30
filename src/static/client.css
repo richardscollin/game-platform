@@ -1,11 +1,16 @@
-body {
-    overflow: hidden;
+:root {
+    --app-height: 100%;
+ }
+
+html {
+    height: 100vh;
+    height: var(--app-height);
 }
 
-#touch-wrap-container {
-    height: 100vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+body {
+    overflow: hidden;
+    height: 100%;
+    border: 8px solid var(--player-color);
 }
 
 .room-code-input-wrapper {

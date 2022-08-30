@@ -35,11 +35,12 @@
 .mini-qr {
     flex-shrink: 0;
     height: 100%;
-    width: 300px;
 }
 
 .connected-players {
     display: flex;
+    flex-grow: 1;
+    align-items: flex-start;
     flex-wrap: wrap;
     gap: 12px;
 }
