@@ -1,6 +1,3 @@
-/**
- * @module components
- */
 import { css } from "../component-utils.js";
 import qrcodegen from "../../lib/qrcodegen.js";
 

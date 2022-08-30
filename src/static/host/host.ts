@@ -1,19 +1,26 @@
-/**
- * @module host
- */
-
-import { rtcConfig, hostConfig } from "../utils.js";
+import { unimplemented, rtcConfig, hostConfig } from "../utils.js";
 import { Notifier } from "../components/notifier/notifier.js";
 import "../components/qr/wifi-qr.js";
 import "../components/qr/room-qr.js";
 import "../components/connected-players.js";
+import { BaseElement } from "../components/component-utils.js";
+import {
+  ServerHostMessage,
+  HostServerMessage,
+  ClientHostMessage,
+  ConnectPlayerMessage,
+  PongMessage,
+  PlayerMoveMessage,
+} from "../../types.js";
 
 /**
  * Player state stored by the host
  */
 class Player {
-  /** @type {number} */ updates = 0;
+  updates = 0;
   /** @type {?string} */ id = null;
+  /** @type {?string} */ status = "active";
+  /** @type {?string} */ color;
   /** @type {?RTCPeerConnection} */ pc = null;
   /** @type {?RTCDataChannel} */ channel = null;
   /** @type {number} */ #rttCount = 0;
@@ -21,10 +28,7 @@ class Player {
   /** @type {number} */ x = 0;
   /** @type {number} */ y = 0;
 
-  /**
-   * @param {string} playerId
-   */
-  constructor(playerId, color) {
+  constructor(playerId: string, color: string) {
     this.id = playerId;
     this.color = color;
   }
@@ -50,43 +54,43 @@ class Player {
     this.channel.send(JSON.stringify(message));
   }
 
-  onMessage({ data }) {
+  onMessage(msg: ClientHostMessage) {
     this.updates++;
-    const message = JSON.parse(data);
-    if (message.type === "pong") {
-      this.appendRTT(performance.now() - message.ping);
-      return;
+    switch (msg.type) {
+      case "pong": {
+        const value = msg.value as PongMessage;
+        this.appendRTT(performance.now() - value.ping);
+        return;
+      }
+      case "move": {
+        const value = msg.value as PlayerMoveMessage;
+        this.x = value.x;
+        this.y = value.y;
+      }
     }
-
-    this.x = message.x;
-    this.y = message.y;
   }
 
   toString() {
     return `Player ${this.id}:  (${this.x},${this.y}) ${!!this.channel} ${
       this.updates
-    } ${this.localClock - this.remoteClock} ${this.latency}`;
+    } ${this.latency}`;
   }
 }
+
 /**
  * Class managing the game on the host machine.
  */
 class GameHost {
   /** @type {?WebSocket} */
   socket = null;
-  onRoomDisconnect = () => {};
   /** @type {?string} */
   roomCode = null;
   players = {};
-  /** @type {GameHost~onRoomCodeCallback} */
-  #onroomcode;
+
   /** @type {function} */ #onplayers;
-  /** @type {function} */ #onplayerconnect;
-  /** @type {function} */ #onplayerdisconnect;
   #origin = null;
   #pingInterval = null;
-  /** @type {Notifier} */
-  #notifier;
+  /** @type {Notifier} */ #notifier;
 
   /**
    * Called when the roomCode is available (after ws connection)
@@ -100,12 +104,10 @@ class GameHost {
    * @param {function(Player):void} onplayerconnect
    * @param {function(Player):void} onplayerdisconnect
    */
-  constructor(onroomcode, onplayers, onplayerconnect, onplayerdisconnect) {
+  constructor(onplayers) {
     this.#notifier = new Notifier();
     this.#onplayers = onplayers;
-    this.#onroomcode = onroomcode;
-    this.#onplayerconnect = onplayerconnect;
-    this.#onplayerdisconnect = onplayerdisconnect;
+
     this.socket = new WebSocket(`${hostConfig.websocket}/create-room`);
     this.socket.onopen = this.#onSocketOpen.bind(this);
     this.socket.onclose = this.#onSocketClose.bind(this);
@@ -121,27 +123,34 @@ class GameHost {
 
   #onSocketClose() {
     const message = `room ${this.roomCode} websocket closed`;
-    this.#notifier.notify("Disconnected", message, 5000, "red");
-    this.onRoomDisconnect();
+    this.#notifier.notify("Disconnected", message, 10000, "red");
+    this.onServerDisconnect();
     console.log(message);
     this.socket = null;
   }
 
   async #onSocketMessage({ data }) {
-    const msg = JSON.parse(data);
+    const msg = JSON.parse(data) as ServerHostMessage;
 
     console.log(msg.type);
     switch (msg.type) {
       case "room-code":
         this.roomCode = msg.value;
-        this.#onroomcode(this.roomCode);
+        this.onServerConnect();
         break;
       case "connect-player": {
-        const { offer, playerId, color } = msg.value;
+        const { offer, playerId, color } = msg.value as ConnectPlayerMessage;
         await this.webRTC(playerId, offer, color, (answer) => {
           this.sendMessage({ type: "answer", value: { answer, playerId } });
           this.#onplayers();
         });
+        break;
+      }
+      case "away-player": {
+        const { playerId } = msg.value;
+        const player = this.players[playerId];
+        player.status = "away";
+        this.onPlayerAway(player);
         break;
       }
 
@@ -155,8 +164,8 @@ class GameHost {
     const pc = new RTCPeerConnection(rtcConfig);
     const player = this.getOrCreatePlayer(playerId, pc, color);
 
-    pc.onicegatheringstatechange = async ({ target }) => {
-      if (target.iceGatheringState === "complete") {
+    pc.onicegatheringstatechange = async () => {
+      if (pc.iceGatheringState === "complete") {
         onAnswer(pc.localDescription);
       }
     };
@@ -181,17 +190,23 @@ class GameHost {
         }, 5000);
 
         this.#onplayers();
-        this.#onplayerconnect(player);
+        this.onPlayerConnect(player);
       };
 
       channel.onclose = () => {
         player.channel = null;
         console.log("close");
         this.#onplayers();
-        this.#onplayerdisconnect(player);
+        this.onPlayerDisconnect(player);
       };
 
-      channel.onmessage = async (message) => {
+      channel.onmessage = async ({ data }) => {
+        const message = JSON.parse(data) as ClientHostMessage;
+        // if (player.status !== "active") {
+        //   this.onPlayerRejoin();
+        // }
+        // player.status = "active";
+
         player.onMessage(message);
         this.#onplayers();
       };
@@ -216,55 +231,93 @@ class GameHost {
     return player;
   }
 
-  sendMessage(msg) {
+  sendMessage(msg: HostServerMessage) {
     if (!this.socket) {
       console.error("Attempting to send message on closed websocket");
       return;
     }
     this.socket.send(JSON.stringify(msg));
   }
+
+  onPlayerConnect(player: Player) {
+    unimplemented();
+  }
+  onPlayerDisconnect(player: Player) {
+    unimplemented();
+  }
+  onPlayerAway(player: Player) {
+    unimplemented();
+  }
+  onPlayerRejoin(player: Player) {
+    unimplemented();
+  }
+  onServerConnect() {
+    unimplemented();
+  }
+  onServerDisconnect() {
+    unimplemented();
+  }
+}
+
+class BrowserGameHost extends GameHost {
+  connectedPlayersRef: BaseElement;
+  roomQRRef: BaseElement;
+
+  constructor(onplayers) {
+    super(onplayers);
+    this.connectedPlayersRef = document.querySelector(".connected-players");
+    this.roomQRRef = document.querySelector("room-qr");
+  }
+
+  onPlayerConnect(player) {
+    const playerInfo = document.createElement("player-info") as BaseElement;
+    playerInfo.setAttributes({
+      name: player.id,
+      color: player.color,
+      status: "connected",
+    });
+    this.connectedPlayersRef.appendChild(playerInfo);
+  }
+
+  onPlayerAway(player: Player) {
+    this.connectedPlayersRef
+      .querySelector(`[name="${player.id}"]`)
+      .setAttribute("status", "away");
+  }
+
+  onPlayerRejoin(player: Player) {
+    this.connectedPlayersRef
+      .querySelector(`[name="${player.id}"]`)
+      .setAttribute("status", "connected");
+  }
+
+  onPlayerDisconnect(player: Player) {
+    this.connectedPlayersRef
+      .querySelector(`[name="${player.id}"]`)
+      .setAttribute("status", "disconnected");
+  }
+
+  onServerConnect() {
+    this.roomQRRef.setAttributes({ code: this.roomCode, status: "connected" });
+  }
+
+  onServerDisconnect() {
+    this.roomQRRef.setAttribute("status", "disconnected");
+  }
 }
 
 function main() {
-  const gameHost = new GameHost(
-    function onRoomCode(roomCode) {
-      const roomQRRef = document.querySelector("room-qr")
-      roomQRRef.setAttribute("code", roomCode);
-      roomQRRef.setAttribute("status", "connected");
-    },
-    function onPlayers() {
-      const playersListRef = document.querySelector(".players-list");
-      playersListRef.innerHTML = "";
+  const gameHost = new BrowserGameHost(function onPlayers() {
+    const playersListRef = document.querySelector(".players-list");
+    playersListRef.innerHTML = "";
 
-      for (const player of Object.values(gameHost.players)) {
-        playersListRef.appendChild(
-          Object.assign(document.createElement("li"), {
-            textContent: player.toString(),
-          })
-        );
-      }
-    },
-    function onPlayerConnect(player) {
-      const connectedPlayersRef = document.querySelector(".connected-players");
-      const playerInfo = document.createElement("player-info");
-
-      playerInfo.setAttribute("name", player.id);
-      playerInfo.setAttribute("color", player.color);
-      playerInfo.setAttribute("status", "connected");
-
-      connectedPlayersRef.appendChild(playerInfo);
-    },
-    function onPlayerDisconnect(player) {
-      const connectedPlayersRef = document.querySelector(".connected-players");
-      const playerRef = connectedPlayersRef.querySelector(
-        `[name="${player.id}"]`
+    for (const player of Object.values(gameHost.players)) {
+      playersListRef.appendChild(
+        Object.assign(document.createElement("li"), {
+          textContent: player.toString(),
+        })
       );
-      playerRef.setAttribute("status", "disconnected");
     }
-  );
-
-  gameHost.onRoomDisconnect = () => {
-    document.querySelector("room-qr").setAttribute("status", "disconnected");
-  }
+  });
 }
 main();

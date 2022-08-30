@@ -13,17 +13,17 @@ document.body.insertAdjacentHTML(
 );
 
 export class Notifier {
-  templateRef = document.getElementById("notification-template");
+  templateRef = document.getElementById("notification-template") as HTMLTemplateElement;
   notificationTrayRef = document.querySelector(".notification-tray");
 
   notify(header, body, timeout = 5000, color = null) {
-    const clone = this.templateRef.content.firstElementChild.cloneNode(true);
+    const clone = this.templateRef.content.firstElementChild.cloneNode(true) as HTMLElement;
     if (color) {
       clone.style.setProperty("--notification-color", color);
     }
     clone.ontransitionend = clone.remove;
-    clone.querySelector(".notification-header").innerText = header;
-    clone.querySelector(".notification-body").innerText = body;
+    clone.querySelector<HTMLElement>(".notification-header").innerText = header;
+    clone.querySelector<HTMLElement>(".notification-body").innerText = body;
     this.notificationTrayRef.appendChild(clone);
     setTimeout(() => {
       clone?.classList?.remove("show");

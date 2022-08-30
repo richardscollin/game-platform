@@ -4,7 +4,7 @@ export const rtcConfig = {
   iceServers,
   iceTransportPolicy: "all",
   iceCandidatePoolSize: 1,
-};
+} as RTCConfiguration;
 
 export function postJson(url, data) {
   // console.log(`POST ${url}`);
@@ -18,13 +18,17 @@ export function postJson(url, data) {
 export function debounce(fn, delay) {
   // https://www.grapecity.com/blogs/improve-app-performance-event-debouncing/
   let timer = null;
-  return function() {
+  return function () {
     let that = this;
     let args = arguments;
     clearTimeout(timer);
 
-    timer = setTimeout(function() {
+    timer = setTimeout(function () {
       fn.apply(that, args);
     }, delay);
   };
+}
+
+export function unimplemented() {
+  console.trace("unimplemented");
 }

@@ -81,7 +81,7 @@ export class Player extends BaseElement {
   }
 
   set status(newValue) {
-    if (!["connected", "disconnected"].includes(newValue)) {
+    if (!["connected", "away", "disconnected"].includes(newValue)) {
       throw `Player ${this.#name} invalid connection status ${newValue}`;
     }
     this.#status = newValue;
@@ -89,8 +89,9 @@ export class Player extends BaseElement {
     this.style.setProperty(
       "--player-connection-color",
       {
-        connected: "green",
-        disconnected: "red",
+        connected: "#24ca40",
+        disconnected: "#fb6057",
+        away: "#fdbb2b",
       }[newValue]
     );
     this.update(this);

@@ -1,11 +1,12 @@
 /**
  * @module client
  */
-import { rtcConfig, postJson, debounce } from "./utils.js";
+import { ClientHostMessage } from "../types.js";
+import { rtcConfig, postJson } from "./utils.js";
 
-console.oLog = console.log;
+const oLog = console.log;
 console.log = function () {
-  console.oLog(arguments);
+  oLog(arguments);
   fetch("/log", {
     method: "POST",
     headers: {
@@ -37,7 +38,7 @@ class Client {
 
     let offer = null;
     pc.onnegotiationneeded = async () => {
-      offer = await pc.createOffer({ offerToReceiveAudio: 1 });
+      offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
     };
 
@@ -45,10 +46,8 @@ class Client {
       console.log("onicecandidate " + JSON.stringify(candidate));
     };
 
-    pc.onicegatheringstatechange = async ({ target }) => {
-      console.log("gathering state " + target.iceGatheringState);
-
-      if (target.iceGatheringState === "complete") {
+    pc.onicegatheringstatechange = async () => {
+      if (pc.iceGatheringState === "complete") {
         const res = await postJson(`/join-room/${this.roomCode}`, offer);
 
         if (!res.ok) {
@@ -70,15 +69,18 @@ class Client {
   }
 
   createBeacon() {
-    document.addEventListener('visibilitychange', () => {
-      console.log("visibility changed " + document.visibilityState)
-      if (document.visibilityState === 'hidden') {
-        navigator.sendBeacon('/log', JSON.stringify({beacon: true}));
+    document.addEventListener("visibilitychange", () => {
+      console.log("visibility changed " + document.visibilityState);
+      if (document.visibilityState === "hidden") {
+        navigator.sendBeacon(
+          `/away-room/${this.roomCode}`,
+          JSON.stringify({ beacon: true })
+        );
       }
     });
   }
 
-  sendHost(message) {
+  sendHost(message: ClientHostMessage) {
     if (!this.#channel) {
       console.log("Attempting send on closed channel");
       return;
@@ -111,8 +113,10 @@ class Client {
       if (message.type === "ping") {
         this.sendHost({
           type: "pong",
-          ping: message.ping,
-          pong: performance.now(),
+          value: {
+            ping: message.ping,
+            pong: performance.now(),
+          },
         });
       }
     };
@@ -131,8 +135,7 @@ export function main() {
   appHeight();
 
   const form = document.querySelector("form");
-  /** @type {HTMLInputElement} */
-  const input = document.querySelector(".room-code-input");
+  const input = document.querySelector(".room-code-input") as HTMLInputElement;
   const currentRoomRef = document.querySelector(".current-room");
 
   const params = new URLSearchParams(document.location.search);
@@ -155,9 +158,12 @@ export function main() {
 
         document.onpointermove = (e) => {
           client.sendHost({
-            clock: performance.now(),
-            x: e.clientX,
-            y: e.clientY,
+            type: "move",
+            value: {
+              clock: performance.now(),
+              x: e.clientX,
+              y: e.clientY,
+            },
           });
         };
       },

@@ -1,18 +1,16 @@
-/**
- * @module
- */
 import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import fs from "fs";
-import http from "http";
-import path from "path";
+import { readFileSync } from "fs";
+import { createServer } from "http";
+import { resolve } from "path";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc"; // dev only
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer } from "ws";
-import { hostConfig } from "../config.js";
+import { hostConfig } from "./config.js";
+import { HostServerMessage } from "./types.js";
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
@@ -21,11 +19,26 @@ class Player {
   offer = null;
   answer = null;
   color = null;
+
+  #away = false;
+
   hostIce;
 
   constructor(id, offer) {
     this.id = id ?? nanoid();
     this.offer = offer;
+  }
+
+  isAway() {
+    return this.#away;
+  }
+
+  setAway() {
+    this.#away = true;
+  }
+
+  setActive() {
+    this.#away = false;
   }
 }
 
@@ -36,16 +49,15 @@ class Player {
 class Room {
   pendingResponses = {};
   players = {};
+  code;
+  hostWebsocket;
 
   constructor(hostWebsocket) {
-    /**
-     * @type {WebSocket.WebSocket}
-     */
     this.code = generateRoomCode();
     this.hostWebsocket = hostWebsocket;
 
     hostWebsocket.addEventListener("message", ({ data }) => {
-      const msg = JSON.parse(data);
+      const msg = JSON.parse(data) as HostServerMessage;
 
       switch (msg.type) {
         case "ping": // nop keep connection alive
@@ -58,6 +70,11 @@ class Room {
             console.warn("Recieved an answer without a pending offer");
           }
 
+          break;
+        }
+        case "player-active": {
+          const { playerId } = msg.value;
+          this.setPlayerActive(playerId);
           break;
         }
         default:
@@ -73,22 +90,38 @@ class Room {
     this.pendingResponses[player.id] = onHostAnswer;
 
     console.log("adding player to room, awaiting response from host");
-    this.hostWebsocket.send(
-      JSON.stringify({
-        type: "connect-player",
-        value: { playerId: player.id, color: player.color, offer: player.offer },
-      })
-    );
+    this.sendMessage({
+      type: "connect-player",
+      value: { playerId: player.id, color: player.color, offer: player.offer },
+    });
+  }
+
+  setPlayerAway(playerId) {
+    const player = this.players[playerId];
+
+    if (!player) {
+      return false;
+    }
+
+    if (player.isAway()) return; // no-op
+
+    player.setAway();
+    this.sendMessage({
+      type: "away-player",
+      value: { playerId: player.id },
+    });
+  }
+
+  setPlayerActive(playerId) {
+    this.players[playerId]?.setActive();
+  }
+
+  notifyRoomCode() {
+    this.sendMessage({ type: "room-code", value: this.code });
   }
 
   sendMessage(message) {
     this.hostWebsocket.send(JSON.stringify(message));
-  }
-
-  notifyRoomCode() {
-    this.hostWebsocket.send(
-      JSON.stringify({ type: "room-code", value: this.code })
-    );
   }
 
   randomColor() {
@@ -103,7 +136,6 @@ class Room {
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   }
-
 }
 
 class SignalingServer {
@@ -141,7 +173,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use("/config.js", (_req, res) => {
-  res.sendFile(path.resolve("config.js"));
+  res.sendFile(resolve("config.js"));
 });
 
 const signalingServer = new SignalingServer();
@@ -151,15 +183,25 @@ app.post("/log", (req, res) => {
   res.status(200).end();
 });
 
-/**
- * @openapi
- * /join-room/:
- *   post:
- *     tags: ["room"]
- *     responses:
- *       200:
- *         description: Hello World
- */
+app.post("/away-room/:roomCode", (req, res) => {
+  console.log(`POST ${req.url} playerId=${req.cookies.playerId}`);
+  const room = signalingServer.findRoom(req.params.roomCode);
+
+  if (!room) {
+    res.status(400).end("Invalid room code");
+    return;
+  }
+
+  if (!req.cookies.playerId) {
+    res.status(400).end("Invalid player id");
+    return;
+  }
+
+  room.setPlayerAway(req.cookies.playerId);
+
+  res.status(200).end();
+});
+
 app.post("/join-room/:roomCode", (req, res) => {
   console.log(`POST ${req.url} playerId=${req.cookies.playerId}`);
   const room = signalingServer.findRoom(req.params.roomCode);
@@ -186,8 +228,8 @@ app.post("/join-room/:roomCode", (req, res) => {
   });
 });
 
-const PORT = process.env.PORT ?? 3000;
-const server = http.createServer(app);
+const PORT = parseInt(process.env.PORT ?? "3000");
+const server = createServer(app);
 const wsServer = new WebSocketServer({ server, path: "/create-room" });
 
 wsServer.on("connection", (socket) => {
@@ -200,7 +242,9 @@ wsServer.on("connection", (socket) => {
   });
 });
 
-const myPackage = JSON.parse(fs.readFileSync("package.json"));
+const myPackage = JSON.parse(
+  readFileSync("package.json", { encoding: "utf8" })
+);
 app.use("/docs", express.static("docs/jsdoc"));
 app.use(
   "/api-docs",

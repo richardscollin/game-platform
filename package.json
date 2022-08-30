@@ -9,6 +9,7 @@
     "lint": "eslint src",
     "coturn": "docker run -d --network=host --mount type=tmpfs,destination=/var/lib/coturn coturn/coturn",
     "dev": "nodemon -i docs/jsdoc --exec 'yarn docs && yarn start'",
+    "tsc": "tsc",
     "start": "node src/server.js",
     "docs": "jsdoc --configure .jsdocrc"
   },
@@ -29,6 +30,7 @@
     "nodemon": "^2.0.19",
     "swagger-jsdoc": "^6.2.5",
     "swagger-ui-express": "^4.5.0",
+    "typescript": "^4.8.2",
     "yaml": "^2.1.1"
   },
   "dependencies": {

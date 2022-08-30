@@ -2,7 +2,7 @@
  * @module components
  */
 import "./qr-code.js";
-import { hostConfig } from "../../config.js";
+import { hostConfig } from "../../../config.js";
 import { css, html, cloneTemplate, BaseElement } from "../component-utils.js";
 
 html`<template id="room-qr-template">
