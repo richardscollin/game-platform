@@ -9,10 +9,14 @@ export interface ConnectPlayerMessage {
   color: string;
 }
 
+export interface AwayPlayerMessage {
+  playerId: string;
+}
+
 // (websocket) message sent from server to host
 export interface ServerHostMessage {
   type: "room-code" | "connect-player" | "away-player";
-  value?: AnswerMessage | ConnectPlayerMessage;
+  value?: AnswerMessage | ConnectPlayerMessage | AwayPlayerMessage;
 }
 
 // (websocket) message sent from host to server
@@ -38,8 +42,13 @@ export interface ClientHostMessage {
   value?: PongMessage | PlayerMoveMessage;
 }
 
+
+export interface PingMessage {
+  ping: number;
+}
+
 // message sent from host to client
 export interface HostClientMessage {
-  type: "";
-  value?: AnswerMessage;
+  type: "ping";
+  value?: PingMessage;
 }

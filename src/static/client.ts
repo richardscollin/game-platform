@@ -1,8 +1,6 @@
-/**
- * @module client
- */
-import { ClientHostMessage } from "../types.js";
-import { rtcConfig, postJson } from "./utils.js";
+/** @module client */
+import { ClientHostMessage, HostClientMessage } from "../types.js";
+import { rtcConfig, postJson, unimplemented } from "./utils.js";
 
 const oLog = console.log;
 console.log = function () {
@@ -15,23 +13,12 @@ console.log = function () {
     body: JSON.stringify([...arguments]),
   });
 };
-console.log("this is a test");
 
-/**
- * hello
- */
-class Client {
-  /** @type {?string} */ playerId = null;
-  /** @type {RTCPeerConnection} */ pc;
-  /** @type {?string} */ roomCode = null;
-  /** @type {RTCDataChannel} */ #channel;
-
-  set color(value) {
-    document.documentElement.style.setProperty("--player-color", value);
-    document
-      .querySelector("meta[name=theme-color]")
-      .setAttribute("content", value);
-  }
+export class Client {
+  playerId: string = null;
+  pc: RTCPeerConnection;
+  roomCode: string = null;
+  #channel: RTCDataChannel;
 
   constructor() {
     const pc = new RTCPeerConnection(rtcConfig);
@@ -68,13 +55,20 @@ class Client {
     this.createBeacon();
   }
 
+  set color(value) {
+    document.documentElement.style.setProperty("--player-color", value);
+    document
+      .querySelector("meta[name=theme-color]")
+      .setAttribute("content", value);
+  }
+
   createBeacon() {
     document.addEventListener("visibilitychange", () => {
       console.log("visibility changed " + document.visibilityState);
       if (document.visibilityState === "hidden") {
         navigator.sendBeacon(
           `/away-room/${this.roomCode}`,
-          JSON.stringify({ beacon: true })
+          JSON.stringify({ playerId: this.playerId })
         );
       }
     });
@@ -88,38 +82,56 @@ class Client {
     this.#channel.send(JSON.stringify(message));
   }
 
-  /**
-   * @param {string} roomCode
-   * @param {function} onopen
-   * @param {function} onclose
-   */
-  async joinRoom(roomCode, onopen, onclose) {
+  joinRoom(roomCode: string) {
     this.roomCode = roomCode;
 
     this.#channel = this.pc.createDataChannel(`room-${roomCode}`);
-    this.#channel.onopen = () => {
-      console.log("channel " + JSON.stringify(this.#channel));
-      console.log("on data channel open");
-      onopen();
-    };
-    this.#channel.onclose = () => {
-      console.log("channel " + JSON.stringify(this.#channel));
-      console.log("on data channel open");
-      onclose();
-    };
-
+    this.#channel.onopen = this.onJoin.bind(this);
+    this.#channel.onclose = this.onLeave.bind(this)
     this.#channel.onmessage = ({ data }) => {
-      const message = JSON.parse(data);
+      const message = JSON.parse(data) as HostClientMessage;
       if (message.type === "ping") {
         this.sendHost({
           type: "pong",
           value: {
-            ping: message.ping,
+            ping: message.value.ping,
             pong: performance.now(),
           },
         });
       }
     };
+  }
+
+  onJoin() {
+    unimplemented();
+  }
+
+  onLeave() {
+    unimplemented();
+  }
+}
+
+class BrowserClient extends Client {
+  currentRoomRef = document.querySelector(".current-room");
+  
+
+  onJoin(): void {
+    this.currentRoomRef.textContent = `${this.roomCode} (connected)`;
+    document.onpointermove = (e) => {
+      this.sendHost({
+        type: "move",
+        value: {
+          clock: performance.now(),
+          x: e.clientX,
+          y: e.clientY,
+        },
+      });
+    };
+  }
+
+  onLeave(): void {
+    this.currentRoomRef.textContent = "disconnected";
+    document.onpointermove = null;
   }
 }
 
@@ -136,7 +148,6 @@ export function main() {
 
   const form = document.querySelector("form");
   const input = document.querySelector(".room-code-input") as HTMLInputElement;
-  const currentRoomRef = document.querySelector(".current-room");
 
   const params = new URLSearchParams(document.location.search);
   const roomCode = params.get("roomCode");
@@ -149,29 +160,8 @@ export function main() {
     e.stopPropagation();
 
     const roomCode = input.value;
-    const client = new Client();
-    console.log("client created");
-    await client.joinRoom(
-      roomCode,
-      function onJoin() {
-        currentRoomRef.textContent = `${roomCode} (connected)`;
-
-        document.onpointermove = (e) => {
-          client.sendHost({
-            type: "move",
-            value: {
-              clock: performance.now(),
-              x: e.clientX,
-              y: e.clientY,
-            },
-          });
-        };
-      },
-      function onLeave() {
-        document.onpointermove = null;
-        currentRoomRef.textContent = "disconnected";
-      }
-    );
+    const client = new BrowserClient();
+    client.joinRoom(roomCode);
   });
 }
 main();

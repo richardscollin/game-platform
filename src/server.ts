@@ -2,15 +2,12 @@ import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import { readFileSync } from "fs";
-import { createServer } from "http";
 import { resolve } from "path";
-import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc"; // dev only
+import { createServer } from "http";
 import { nanoid, customAlphabet } from "nanoid";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, type WebSocket } from "ws";
 import { hostConfig } from "./config.js";
-import { HostServerMessage } from "./types.js";
+import { HostServerMessage, ServerHostMessage } from "./types.js";
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
@@ -120,7 +117,7 @@ class Room {
     this.sendMessage({ type: "room-code", value: this.code });
   }
 
-  sendMessage(message) {
+  sendMessage(message: ServerHostMessage) {
     this.hostWebsocket.send(JSON.stringify(message));
   }
 
@@ -141,30 +138,27 @@ class Room {
 class SignalingServer {
   rooms = {};
 
-  createRoom(webSocket) {
+  createRoom(webSocket: WebSocket) {
     const room = new Room(webSocket);
     this.rooms[room.code] = room;
     console.log(`creating room ${room.code}`);
     return room;
   }
 
-  removeRoom(code) {
+  removeRoom(code: string) {
     delete this.rooms[code];
     // TODO worry about lingering callbacks
   }
 
-  /**
-   *
-   * @param {string} roomCode room code
-   * @returns {Room | null} the room associated with the roomCode, null otherwise
-   */
-  findRoom(roomCode) {
+  findRoom(roomCode: string): Room {
     return this.rooms[roomCode.toUpperCase()] ?? null;
   }
 }
 
 const app = express();
-app.use("/", express.static("src/static"));
+app.use("/", express.static("./out/static"));
+app.use("/", express.static("./src/static"));
+
 app.use(
   cors({
     origin: hostConfig.cors,
@@ -172,8 +166,8 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
-app.use("/config.js", (_req, res) => {
-  res.sendFile(resolve("config.js"));
+app.get("/config.js", (req, res) => {
+  res.sendFile(resolve("out/config.js"));
 });
 
 const signalingServer = new SignalingServer();
@@ -184,7 +178,9 @@ app.post("/log", (req, res) => {
 });
 
 app.post("/away-room/:roomCode", (req, res) => {
-  console.log(`POST ${req.url} playerId=${req.cookies.playerId}`);
+  const { playerId } = JSON.parse(req.body);
+
+  console.log(`POST ${req.url} playerId=${playerId}`);
   const room = signalingServer.findRoom(req.params.roomCode);
 
   if (!room) {
@@ -192,12 +188,12 @@ app.post("/away-room/:roomCode", (req, res) => {
     return;
   }
 
-  if (!req.cookies.playerId) {
+  if (!playerId) {
     res.status(400).end("Invalid player id");
     return;
   }
 
-  room.setPlayerAway(req.cookies.playerId);
+  room.setPlayerAway(playerId);
 
   res.status(200).end();
 });
@@ -241,35 +237,6 @@ wsServer.on("connection", (socket) => {
     signalingServer.removeRoom(room.code);
   });
 });
-
-const myPackage = JSON.parse(
-  readFileSync("package.json", { encoding: "utf8" })
-);
-app.use("/docs", express.static("docs/jsdoc"));
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(
-    swaggerJsdoc({
-      definition: {
-        openapi: "3.0.0",
-        info: {
-          version: myPackage.version,
-        },
-      },
-      apis: ["src/server.js"],
-    }),
-    {
-      customCss: `
-      body {
-        background: unset;
-      }
-      .swagger-ui .topbar {
-        display: none
-      }`,
-    }
-  )
-);
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(process.env.NODE_ENV);
