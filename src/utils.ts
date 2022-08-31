@@ -1,4 +1,4 @@
-import { hostConfig, iceServers } from "../config.js";
+import { hostConfig, iceServers } from "./config.js";
 export { hostConfig };
 export const rtcConfig = {
   iceServers,

@@ -1,0 +1,39 @@
+.player {
+    /*
+    --player-color: ;
+    --player-connection-color: ;
+    */
+    height: 55px;
+    width: 250px;
+    background-color: white;
+    border-top: 8px solid var(--player-color);
+    box-shadow: var(--default-box-shadow);
+    border-radius: var(--default-border-radius);
+    padding: 0.8em 1em;
+
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.player-name {
+    font-weight: bold;
+    font-size: 20px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-connection-status {
+    text-transform: capitalize;
+}
+
+.player-connection-status::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    margin-left: 5px;
+    background-color: var(--player-connection-color);
+    display: inline-block;
+    border-radius: 50%;
+}

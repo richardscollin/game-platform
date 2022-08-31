@@ -1,0 +1,21 @@
+.room-qr {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.room-qr .room-code {
+    font-size: 20px;
+    text-align: left;
+}
+
+.room-qr .room-code-text {
+    font-weight: bold;
+    font-size: 40px;
+}
+
+.room-qr .step-2 {
+    font-weight: bold;
+    font-size: 40px;
+}

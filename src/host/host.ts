@@ -2,7 +2,7 @@
 
 import "../components/qr/wifi-qr.js";
 import "../components/qr/room-qr.js";
-import "../components/connected-players.js";
+import "../components/connected-players/connected-players.js";
 import { type BaseElement } from "../components/component-utils.js";
 
 import { type Player } from "./player.js";

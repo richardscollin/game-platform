@@ -1,0 +1,5 @@
+.qr-code {
+    flex-shrink: 0;
+    height: calc(var(--bottom-panel-height) - 2 * var(--bottom-panel-padding-y));
+    width: calc(var(--bottom-panel-height) - 2 * var(--bottom-panel-padding-y));
+}

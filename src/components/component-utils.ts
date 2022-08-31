@@ -12,6 +12,29 @@ export function cloneTemplate(cssId: string) {
 }
 
 export class BaseElement extends HTMLElement {
+  ready = false;
+  templateId;
+
+  rerender(root: HTMLElement) {
+    console.trace("rerender unimplmented");
+  }
+
+  update() {
+    if (!this.ready) return;
+    this.rerender(this);
+  }
+
+  connectedCallback() {
+    if (!this.templateId) {
+      console.trace("templateId is undefined");
+    }
+
+    const root = cloneTemplate(this.templateId);
+    this.ready = true;
+    this.rerender(root);
+    this.innerHTML = root.outerHTML;
+  }
+
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
     if (oldValue !== newValue) {
       this[name] = newValue;

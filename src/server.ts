@@ -7,7 +7,7 @@ import { createServer } from "http";
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer, type WebSocket } from "ws";
 import { hostConfig } from "./config.js";
-import { HostServerMessage, ServerHostMessage } from "./static/types/index.js";
+import { HostServerMessage, ServerHostMessage } from "./types/index.js";
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 

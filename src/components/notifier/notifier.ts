@@ -1,23 +1,23 @@
-document.body.insertAdjacentHTML(
-  "beforeend",
-  `
-<template id="notification-template">
+import { cloneTemplate, html } from "../component-utils.js";
+import "./notifier.css";
+
+html`<template id="notification-template">
   <div class="notification show">
-  <div class="notification-header">Goal!</div>
-  <div class="notification-body">Player 1 Scored a point</div>
-  <img src="../images/icons/x-mark.svg" class="notification-dismiss" onclick="
-      this.parentElement.classList.remove('show');
-  "></img>
+    <div class="notification-header">Goal!</div>
+    <div class="notification-body">Player 1 Scored a point</div>
+    <img
+      src="../images/icons/x-mark.svg"
+      class="notification-dismiss"
+      onclick="this.parentElement.classList.remove('show');"
+    />
   </div>
-</template>`
-);
+</template>`;
 
 export class Notifier {
-  templateRef = document.getElementById("notification-template") as HTMLTemplateElement;
   notificationTrayRef = document.querySelector(".notification-tray");
 
   notify(header, body, timeout = 5000, color = null) {
-    const clone = this.templateRef.content.firstElementChild.cloneNode(true) as HTMLElement;
+    const clone = cloneTemplate("notification-template");
     if (color) {
       clone.style.setProperty("--notification-color", color);
     }

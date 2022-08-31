@@ -1,4 +1,4 @@
 node_modules
 .env
-docs/jsdoc
-out
+public/out
+public/docs
