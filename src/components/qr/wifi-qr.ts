@@ -15,20 +15,20 @@ class WifiQR extends BaseElement {
   static observedAttributes = ["ssid", "password"];
   templateId = "wifi-qr-template";
 
-  #ssid = "";
-  #password = "";
+  wssid = "";
+  wpass = "";
 
   rerender(root: HTMLElement) {
-    const value = `WIFI:S:${this.#ssid};T:WPA;P:${this.#password};;`;
+    const value = `WIFI:S:${this.wssid};T:WPA;P:${this.wpass};;`;
     root.querySelector("qr-code").setAttribute("value", value);
   }
 
   set ssid(newValue) {
-    this.#ssid = newValue;
+    this.wssid = newValue;
   }
 
   set password(newValue) {
-    this.#password = newValue;
+    this.wpass = newValue;
   }
 }
 

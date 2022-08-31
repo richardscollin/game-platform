@@ -7,8 +7,8 @@ export class Player {
   color: string;
   pc: RTCPeerConnection = null;
   channel: RTCDataChannel = null;
-  #rttCount = 0;
-  #avgRTT = 0;
+  rttCount = 0;
+  avgRTT = 0;
   x = 0;
   y = 0;
 
@@ -18,13 +18,13 @@ export class Player {
   }
 
   get latency() {
-    return this.#avgRTT / 2;
+    return this.avgRTT / 2;
   }
 
   appendRTT(rtt) {
     // A_{n+1} = (x_{n+1} + n * A_n) / (n + 1)
-    const n = this.#rttCount++;
-    this.#avgRTT = (rtt + n * this.#avgRTT) / (n + 1);
+    const n = this.rttCount++;
+    this.avgRTT = (rtt + n * this.avgRTT) / (n + 1);
   }
 
   sendMessage(message: HostClientMessage) {

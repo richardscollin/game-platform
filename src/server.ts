@@ -17,7 +17,7 @@ class Player {
   answer = null;
   color = null;
 
-  #away = false;
+  away = false;
 
   hostIce;
 
@@ -27,15 +27,15 @@ class Player {
   }
 
   isAway() {
-    return this.#away;
+    return this.away;
   }
 
   setAway() {
-    this.#away = true;
+    this.away = true;
   }
 
   setActive() {
-    this.#away = false;
+    this.away = false;
   }
 }
 

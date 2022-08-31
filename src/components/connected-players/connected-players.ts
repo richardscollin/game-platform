@@ -14,32 +14,32 @@ export class Player extends BaseElement {
   static observedAttributes = ["name", "color", "status"];
   templateId = "player-template";
 
-  #name;
-  #status;
-  #color;
+  pname;
+  pstatus;
+  pcolor;
 
   rerender(root: HTMLElement) {
-    root.querySelector(".player-name").textContent = this.#name;
-    root.querySelector(".player-connection-status").textContent = this.#status;
+    root.querySelector(".player-name").textContent = this.pname;
+    root.querySelector(".player-connection-status").textContent = this.pstatus;
   }
 
 
   set name(newValue) {
-    this.#name = newValue;
+    this.pname = newValue;
     this.update();
   }
 
   set color(newValue) {
-    this.#color = newValue;
+    this.pcolor = newValue;
     this.style.setProperty("--player-color", newValue);
     this.update();
   }
 
   set status(newValue) {
     if (!["connected", "away", "disconnected"].includes(newValue)) {
-      throw `Player ${this.#name} invalid connection status ${newValue}`;
+      throw `Player ${this.pname} invalid connection status ${newValue}`;
     }
-    this.#status = newValue;
+    this.pstatus = newValue;
 
     this.style.setProperty(
       "--player-connection-color",

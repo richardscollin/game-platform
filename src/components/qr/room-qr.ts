@@ -21,24 +21,25 @@ class RoomQR extends BaseElement {
   static observedAttributes = ["status", "code"];
   templateId = "room-qr-template";
 
-  #code;
-  #status = "";
+  roomCode;
+  connectionStatus = "";
 
   rerender(root: HTMLElement) {
-    const url = hostConfig.webRoot + "/?roomCode=" + this.#code;
-    root.querySelector<HTMLElement>(".room-code-text").innerText = this.#code;
+    const url = hostConfig.webRoot + "/?roomCode=" + this.roomCode;
+    root.querySelector<HTMLElement>(".room-code-text").innerText =
+      this.roomCode;
     root.querySelector("qr-code").setAttribute("value", url);
     root.querySelector<HTMLElement>(".connection-state").innerText =
-      this.#status;
+      this.connectionStatus;
   }
 
   set code(newValue) {
-    this.#code = newValue;
+    this.roomCode = newValue;
     this.update();
   }
 
   set status(newValue) {
-    this.#status = newValue;
+    this.connectionStatus = newValue;
     this.update();
   }
 }

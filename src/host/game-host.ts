@@ -12,10 +12,10 @@ export abstract class GameHost {
   roomCode: string;
   players = {};
 
-  #onplayers;
-  #origin = null;
-  #pingInterval = null;
-  #notifier: Notifier;
+  onplayers;
+  origin = null;
+  pingInterval = null;
+  notifier: Notifier;
 
   abstract onPlayerConnect(player: Player);
   abstract onPlayerDisconnect(player: Player);
@@ -25,34 +25,34 @@ export abstract class GameHost {
   abstract onServerDisconnect();
 
   constructor(onplayers) {
-    this.#notifier = new Notifier();
-    this.#onplayers = onplayers;
+    this.notifier = new Notifier();
+    this.onplayers = onplayers;
 
     this.socket = new WebSocket(`${hostConfig.websocket}/create-room`);
-    this.socket.onopen = this.#onSocketOpen.bind(this);
-    this.socket.onclose = this.#onSocketClose.bind(this);
+    this.socket.onopen = this.onSocketOpen.bind(this);
+    this.socket.onclose = this.onSocketClose.bind(this);
     this.socket.onmessage = ({ data }) => {
       const msg = JSON.parse(data) as ServerHostMessage;
-      this.#onSocketMessage(msg);
+      this.onSocketMessage(msg);
     };
   }
 
-  #onSocketOpen() {
-    this.#notifier.notify("Server Connected", "Joined room", 1000, "green");
-    this.#pingInterval = setInterval(() => {
+  onSocketOpen() {
+    this.notifier.notify("Server Connected", "Joined room", 1000, "green");
+    this.pingInterval = setInterval(() => {
       this.sendMessage({ type: "ping" });
     }, 1000);
   }
 
-  #onSocketClose() {
+  onSocketClose() {
     const message = `room ${this.roomCode} websocket closed`;
-    this.#notifier.notify("Disconnected", message, 10000, "red");
+    this.notifier.notify("Disconnected", message, 10000, "red");
     this.onServerDisconnect();
     console.log(message);
     this.socket = null;
   }
 
-  async #onSocketMessage(msg: ServerHostMessage) {
+  async onSocketMessage(msg: ServerHostMessage) {
     switch (msg.type) {
       case "room-code": {
         this.roomCode = msg.roomCode;
@@ -63,7 +63,7 @@ export abstract class GameHost {
         const { offer, playerId, color } = msg;
         await this.webRTC(playerId, offer, color, (answer) => {
           this.sendMessage({ type: "answer", answer, playerId });
-          this.#onplayers();
+          this.onplayers();
         });
         break;
       }
@@ -92,7 +92,7 @@ export abstract class GameHost {
       console.log("ondatachannel");
       channel.onopen = () => {
         player.channel = channel;
-        this.#notifier.notify(
+        this.notifier.notify(
           "Player Connected",
           `${playerId} joined room`,
           1000,
@@ -105,14 +105,14 @@ export abstract class GameHost {
           );
         }, 5000);
 
-        this.#onplayers();
+        this.onplayers();
         this.onPlayerConnect(player);
       };
 
       channel.onclose = () => {
         player.channel = null;
         console.log("close");
-        this.#onplayers();
+        this.onplayers();
         this.onPlayerDisconnect(player);
       };
 
@@ -124,7 +124,7 @@ export abstract class GameHost {
         // player.status = "active";
 
         player.onMessage(message);
-        this.#onplayers();
+        this.onplayers();
       };
     };
   }

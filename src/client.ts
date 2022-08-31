@@ -18,7 +18,7 @@ abstract class Client {
   playerId: string = null;
   pc: RTCPeerConnection;
   roomCode: string = null;
-  #channel: RTCDataChannel;
+  channel: RTCDataChannel;
 
   abstract onJoin();
   abstract onLeave();
@@ -78,20 +78,20 @@ abstract class Client {
   }
 
   sendHost(message: ClientHostMessage) {
-    if (!this.#channel) {
+    if (!this.channel) {
       console.log("Attempting send on closed channel");
       return;
     }
-    this.#channel.send(JSON.stringify(message));
+    this.channel.send(JSON.stringify(message));
   }
 
   joinRoom(roomCode: string) {
     this.roomCode = roomCode;
 
-    this.#channel = this.pc.createDataChannel(`room-${roomCode}`);
-    this.#channel.onopen = this.onJoin.bind(this);
-    this.#channel.onclose = this.onLeave.bind(this);
-    this.#channel.onmessage = ({ data }) => {
+    this.channel = this.pc.createDataChannel(`room-${roomCode}`);
+    this.channel.onopen = this.onJoin.bind(this);
+    this.channel.onclose = this.onLeave.bind(this);
+    this.channel.onmessage = ({ data }) => {
       const message = JSON.parse(data) as HostClientMessage;
       if (message.type === "ping") {
         this.sendHost({
