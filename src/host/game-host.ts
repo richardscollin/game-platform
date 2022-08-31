@@ -1,4 +1,4 @@
-import { unimplemented, rtcConfig, hostConfig } from "../utils.js";
+import { rtcConfig, hostConfig } from "../utils.js";
 import { Notifier } from "../components/notifier/notifier.js";
 import {
   ServerHostMessage,
@@ -7,7 +7,7 @@ import {
 } from "../types/index.js";
 import { Player } from "./player.js";
 
-export class GameHost {
+export abstract class GameHost {
   socket: WebSocket;
   roomCode: string;
   players = {};
@@ -17,18 +17,13 @@ export class GameHost {
   #pingInterval = null;
   #notifier: Notifier;
 
-  /**
-   * Called when the roomCode is available (after ws connection)
-   * @callback GameHost~onRoomCodeCallback
-   * @param {string} roomCode
-   */
+  abstract onPlayerConnect(player: Player);
+  abstract onPlayerDisconnect(player: Player);
+  abstract onPlayerAway(player: Player);
+  abstract onPlayerRejoin(player: Player);
+  abstract onServerConnect();
+  abstract onServerDisconnect();
 
-  /**
-   * @param {GameHost~onRoomCodeCallback} onroomcode
-   * @param {function():void} onplayers
-   * @param {function(Player):void} onplayerconnect
-   * @param {function(Player):void} onplayerdisconnect
-   */
   constructor(onplayers) {
     this.#notifier = new Notifier();
     this.#onplayers = onplayers;
@@ -158,24 +153,5 @@ export class GameHost {
       return;
     }
     this.socket.send(JSON.stringify(msg));
-  }
-
-  onPlayerConnect(player: Player) {
-    unimplemented();
-  }
-  onPlayerDisconnect(player: Player) {
-    unimplemented();
-  }
-  onPlayerAway(player: Player) {
-    unimplemented();
-  }
-  onPlayerRejoin(player: Player) {
-    unimplemented();
-  }
-  onServerConnect() {
-    unimplemented();
-  }
-  onServerDisconnect() {
-    unimplemented();
   }
 }

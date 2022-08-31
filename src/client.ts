@@ -1,5 +1,5 @@
 /** @module client */
-import { rtcConfig, postJson, unimplemented } from "./utils.js";
+import { rtcConfig, postJson } from "./utils.js";
 import { ClientHostMessage, HostClientMessage } from "./types/index.js";
 
 const oLog = console.log;
@@ -14,11 +14,14 @@ console.log = function () {
   });
 };
 
-export class Client {
+abstract class Client {
   playerId: string = null;
   pc: RTCPeerConnection;
   roomCode: string = null;
   #channel: RTCDataChannel;
+
+  abstract onJoin();
+  abstract onLeave();
 
   constructor() {
     const pc = new RTCPeerConnection(rtcConfig);
@@ -98,14 +101,6 @@ export class Client {
         });
       }
     };
-  }
-
-  onJoin() {
-    unimplemented();
-  }
-
-  onLeave() {
-    unimplemented();
   }
 }
 
