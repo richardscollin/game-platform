@@ -1,6 +1,6 @@
 /** @module client */
-import { ClientHostMessage, HostClientMessage } from "../types.js";
 import { rtcConfig, postJson, unimplemented } from "./utils.js";
+import { ClientHostMessage, HostClientMessage } from "./types/index.js";
 
 const oLog = console.log;
 console.log = function () {
@@ -87,16 +87,14 @@ export class Client {
 
     this.#channel = this.pc.createDataChannel(`room-${roomCode}`);
     this.#channel.onopen = this.onJoin.bind(this);
-    this.#channel.onclose = this.onLeave.bind(this)
+    this.#channel.onclose = this.onLeave.bind(this);
     this.#channel.onmessage = ({ data }) => {
       const message = JSON.parse(data) as HostClientMessage;
       if (message.type === "ping") {
         this.sendHost({
           type: "pong",
-          value: {
-            ping: message.value.ping,
-            pong: performance.now(),
-          },
+          ping: message.ping,
+          pong: performance.now(),
         });
       }
     };
@@ -113,18 +111,15 @@ export class Client {
 
 class BrowserClient extends Client {
   currentRoomRef = document.querySelector(".current-room");
-  
 
   onJoin(): void {
     this.currentRoomRef.textContent = `${this.roomCode} (connected)`;
     document.onpointermove = (e) => {
       this.sendHost({
         type: "move",
-        value: {
-          clock: performance.now(),
-          x: e.clientX,
-          y: e.clientY,
-        },
+        clock: performance.now(),
+        x: e.clientX,
+        y: e.clientY,
       });
     };
   }

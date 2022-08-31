@@ -1,21 +1,16 @@
-import {
-  ClientHostMessage,
-  PongMessage,
-  PlayerMoveMessage,
-  HostClientMessage,
-} from "../../types.js";
+import { ClientHostMessage, HostClientMessage } from "../types/index.js";
 
 export class Player {
   updates = 0;
-  /** @type {?string} */ id = null;
-  /** @type {?string} */ status = "active";
-  /** @type {?string} */ color;
-  /** @type {?RTCPeerConnection} */ pc = null;
-  /** @type {?RTCDataChannel} */ channel = null;
-  /** @type {number} */ #rttCount = 0;
-  /** @type {number} */ #avgRTT = 0;
-  /** @type {number} */ x = 0;
-  /** @type {number} */ y = 0;
+  id: string = null;
+  status: string = "active";
+  color: string;
+  pc: RTCPeerConnection = null;
+  channel: RTCDataChannel = null;
+  #rttCount = 0;
+  #avgRTT = 0;
+  x = 0;
+  y = 0;
 
   constructor(playerId: string, color: string) {
     this.id = playerId;
@@ -47,14 +42,13 @@ export class Player {
     this.updates++;
     switch (msg.type) {
       case "pong": {
-        const value = msg.value as PongMessage;
-        this.appendRTT(performance.now() - value.ping);
+        this.appendRTT(performance.now() - msg.ping);
         return;
       }
       case "move": {
-        const value = msg.value as PlayerMoveMessage;
-        this.x = value.x;
-        this.y = value.y;
+        const { x, y } = msg;
+        this.x = x;
+        this.y = y;
       }
     }
   }

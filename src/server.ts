@@ -7,7 +7,7 @@ import { createServer } from "http";
 import { nanoid, customAlphabet } from "nanoid";
 import { WebSocketServer, type WebSocket } from "ws";
 import { hostConfig } from "./config.js";
-import { HostServerMessage, ServerHostMessage } from "./types.js";
+import { HostServerMessage, ServerHostMessage } from "./static/types/index.js";
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
@@ -54,30 +54,30 @@ class Room {
     this.hostWebsocket = hostWebsocket;
 
     hostWebsocket.addEventListener("message", ({ data }) => {
-      const msg = JSON.parse(data) as HostServerMessage;
-
-      switch (msg.type) {
-        case "ping": // nop keep connection alive
-          break;
-        case "answer": {
-          const { answer, playerId } = msg.value;
-          if (this.pendingResponses[playerId]) {
-            this.pendingResponses[playerId](answer);
-          } else {
-            console.warn("Recieved an answer without a pending offer");
-          }
-
-          break;
-        }
-        case "player-active": {
-          const { playerId } = msg.value;
-          this.setPlayerActive(playerId);
-          break;
-        }
-        default:
-          console.log(`Unknown message type: ${msg.type}`);
-      }
+      this.onMessage(JSON.parse(data));
     });
+  }
+
+  onMessage(msg: HostServerMessage) {
+    switch (msg.type) {
+      case "ping": // nop keep connection alive
+        break;
+      case "answer": {
+        const { answer, playerId } = msg;
+        if (this.pendingResponses[playerId]) {
+          this.pendingResponses[playerId](answer);
+        } else {
+          console.warn("Recieved an answer without a pending offer");
+        }
+
+        break;
+      }
+      case "player-active": {
+        const { playerId } = msg;
+        this.setPlayerActive(playerId);
+        break;
+      }
+    }
   }
 
   addPlayer(player, onHostAnswer) {
@@ -89,7 +89,9 @@ class Room {
     console.log("adding player to room, awaiting response from host");
     this.sendMessage({
       type: "connect-player",
-      value: { playerId: player.id, color: player.color, offer: player.offer },
+      playerId: player.id,
+      color: player.color,
+      offer: player.offer,
     });
   }
 
@@ -105,7 +107,7 @@ class Room {
     player.setAway();
     this.sendMessage({
       type: "away-player",
-      value: { playerId: player.id },
+      playerId: player.id,
     });
   }
 
@@ -114,7 +116,7 @@ class Room {
   }
 
   notifyRoomCode() {
-    this.sendMessage({ type: "room-code", value: this.code });
+    this.sendMessage({ type: "room-code", roomCode: this.code });
   }
 
   sendMessage(message: ServerHostMessage) {

@@ -9,14 +9,8 @@ import { type Player } from "./player.js";
 import { GameHost } from "./game-host.js";
 
 class BrowserGameHost extends GameHost {
-  connectedPlayersRef: BaseElement;
-  roomQRRef: BaseElement;
-
-  constructor(onplayers) {
-    super(onplayers);
-    this.connectedPlayersRef = document.querySelector(".connected-players");
-    this.roomQRRef = document.querySelector("room-qr");
-  }
+  connectedPlayersRef = document.querySelector<BaseElement>(".connected-players");
+  roomQRRef = document.querySelector<BaseElement>("room-qr");
 
   onPlayerConnect(player) {
     const playerInfo = document.createElement("player-info") as BaseElement;
