@@ -6,13 +6,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "node esbuild.js",
-    "build-server": "tsc",
+    "build": "node scripts/esbuild.js",
     "check": "tsc --noEmit",
     "coturn": "docker run -d --network=host --mount type=tmpfs,destination=/var/lib/coturn coturn/coturn",
-    "dev": "nodemon --ignore out --watch src --exec 'yarn build && yarn docs && yarn start'",
-    "docs": "typedoc --out public/docs src/server.ts src/static/host/host.ts src/static/client.ts src/types/index.d.ts",
-    "start": "node out/server.js"
+    "dev": "nodemon --ignore out --watch src -e '*' --exec 'yarn build && yarn start'",
+    "docs": "typedoc",
+    "start": "node src/server.js"
   },
   "browserslist": [
     "last 2 Chrome versions",
@@ -32,7 +31,6 @@
   "dependencies": {
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "nanoid": "^4.0.0",
     "ws": "^8.8.1"

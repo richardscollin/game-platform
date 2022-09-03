@@ -1,21 +1,10 @@
 /**
  * @module components
  */
-import "./qr-code.js";
+import "./room-qr.css";
+import "../qr-code/qr-code.js";
 import { hostConfig } from "../../config.js";
-import { html, BaseElement } from "../component-utils.js";
-
-html`<template id="room-qr-template">
-  <div class="room-qr">
-    <div class="room-code">
-      <div class="step-2">STEP 2</div>
-      <div class="connection-state">X</div>
-      Room Code
-      <div class="room-code-text"></div>
-    </div>
-    <qr-code></qr-code>
-  </div>
-</template>`;
+import { BaseElement } from "../component-utils.js";
 
 class RoomQR extends BaseElement {
   static observedAttributes = ["status", "code"];

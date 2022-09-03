@@ -1,15 +1,9 @@
 /**
  * @module components
  */
-import "./qr-code.js";
-import { html, BaseElement } from "../component-utils.js";
-
-html`<template id="wifi-qr-template">
- <div class="wifi-qr">
-    <qr-code></qr-code>
-    <img class="wifi-logo" src="../components/qr/wifi.svg">
- <div>
- </template>`;
+import "../qr-code/qr-code.js";
+import "./wifi-qr.css"
+import { BaseElement } from "../component-utils.js";
 
 class WifiQR extends BaseElement {
   static observedAttributes = ["ssid", "password"];

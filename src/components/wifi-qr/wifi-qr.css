@@ -1,0 +1,31 @@
+.wifi-qr {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+}
+
+.wifi-logo {
+    position: absolute;
+    top: 45px;
+    left: 45px;
+    width: 45px;
+    height: 45px;
+    background: white;
+    padding: 2px;
+    border-radius: 20%;
+}
+
+.wifi-instructions {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.wifi-instructions-header {
+    font-weight: bold;
+    font-size: 40px;
+}
+
+.wifi-instructions-body {
+    font-size: 20px;
+}

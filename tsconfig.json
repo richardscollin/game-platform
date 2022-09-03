@@ -20,4 +20,11 @@
         "node_modules/*",
         "src/lib/qrcodegen.js",
     ],
+    "typedocOptions": {
+        "entryPoints": [
+            "src/client.ts",
+            "src/host/host.ts",
+        ],
+        "out": "out/docs"
+    }
 }

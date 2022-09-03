@@ -1,13 +1,12 @@
-import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import { resolve } from "path";
 import { createServer } from "http";
 import { nanoid, customAlphabet } from "nanoid";
-import { WebSocketServer, type WebSocket } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import { hostConfig } from "./config.js";
-import { HostServerMessage, ServerHostMessage } from "./types/index.js";
+// import { HostServerMessage, ServerHostMessage } from "./types/index.js";
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
@@ -58,7 +57,10 @@ class Room {
     });
   }
 
-  onMessage(msg: HostServerMessage) {
+  /**
+   * @param {HostServerMessage} msg 
+   */
+  onMessage(msg) {
     switch (msg.type) {
       case "ping": // nop keep connection alive
         break;
@@ -119,7 +121,10 @@ class Room {
     this.sendMessage({ type: "room-code", roomCode: this.code });
   }
 
-  sendMessage(message: ServerHostMessage) {
+  /**
+   * @param {ServerHostMessage} message 
+   */
+  sendMessage(message) {
     this.hostWebsocket.send(JSON.stringify(message));
   }
 
@@ -140,26 +145,31 @@ class Room {
 class SignalingServer {
   rooms = {};
 
-  createRoom(webSocket: WebSocket) {
+  /**
+   * 
+   * @param {WebSocket} webSocket 
+   * @returns Room
+   */
+  createRoom(webSocket) {
     const room = new Room(webSocket);
     this.rooms[room.code] = room;
     console.log(`creating room ${room.code}`);
     return room;
   }
 
-  removeRoom(code: string) {
+  removeRoom(code) {
     delete this.rooms[code];
     // TODO worry about lingering callbacks
   }
 
-  findRoom(roomCode: string): Room {
+  findRoom(roomCode) {
     return this.rooms[roomCode.toUpperCase()] ?? null;
   }
 }
 
 const app = express();
-app.use("/", express.static("./out/static"));
-app.use("/", express.static("./src/static"));
+app.use("/", express.static("./public"));
+app.use("/", express.static("./out"));
 
 app.use(
   cors({
@@ -169,7 +179,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.get("/config.js", (req, res) => {
-  res.sendFile(resolve("out/config.js"));
+  res.sendFile(resolve("src/config.js"));
 });
 
 const signalingServer = new SignalingServer();
@@ -241,6 +251,5 @@ wsServer.on("connection", (socket) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(process.env.NODE_ENV);
   console.log(`http://localhost:${PORT}`);
 });

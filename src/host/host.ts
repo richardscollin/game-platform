@@ -1,7 +1,7 @@
 /** @module host */
-
-import "../components/qr/wifi-qr.js";
-import "../components/qr/room-qr.js";
+import "./host.css";
+import "../components/wifi-qr/wifi-qr.js";
+import "../components/room-qr/room-qr.js";
 import "../components/connected-players/connected-players.js";
 import { type BaseElement } from "../components/component-utils.js";
 

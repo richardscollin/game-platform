@@ -1,14 +1,5 @@
-import { html, BaseElement } from "../component-utils.js";
+import { BaseElement } from "../component-utils.js";
 import "./connected-players.css";
-
-html`
-  <template id="player-template">
-    <div class="player">
-      <div class="player-name">Player name</div>
-      <div class="player-connection-status">disconnected</div>
-    </div>
-  </template>
-`;
 
 export class Player extends BaseElement {
   static observedAttributes = ["name", "color", "status"];
@@ -22,7 +13,6 @@ export class Player extends BaseElement {
     root.querySelector(".player-name").textContent = this.pname;
     root.querySelector(".player-connection-status").textContent = this.pstatus;
   }
-
 
   set name(newValue) {
     this.pname = newValue;
