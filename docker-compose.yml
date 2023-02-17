@@ -10,5 +10,10 @@ services:
       PORT: "80"
   coturn:
     hostname: coturn
-    image: coturn/coturn:alpine
+    image: coturn.richardscollin.com
+    build:
+      context: .
+      dockerfile: coturn.Dockerfile
     network_mode: "host"
+    volumes:
+      - "/etc/letsencrypt/:/etc/letsencrypt:ro"
