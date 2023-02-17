@@ -8,3 +8,7 @@ services:
     networks: ["container-net"]
     environment:
       PORT: "80"
+  coturn:
+    hostname: coturn
+    image: coturn/coturn:alpine
+    network_mode: "host"
