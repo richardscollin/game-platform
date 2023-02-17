@@ -1,4 +1,4 @@
-from node:18-alpine3.17
+from node:18-alpine3.16
 workdir /usr/src/app
 copy package*.json yarn.lock ./
 run yarn install
