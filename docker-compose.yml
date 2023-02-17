@@ -1,0 +1,11 @@
+version: "2"
+services:
+  app:
+    hostname: game
+    image: game.richardscollin.com
+    ports: ["8081:80"]
+    build: .
+    restart: unless-stopped
+    networks: ["container-net"]
+    environment:
+      PORT: "80"
