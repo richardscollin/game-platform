@@ -5,4 +5,5 @@ run yarn install --production
 COPY . .
 
 EXPOSE 80
+ENV PORT=80
 CMD ["node", "src/server.js"]

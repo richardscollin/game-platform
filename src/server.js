@@ -4,9 +4,25 @@ import express from "express";
 import { resolve } from "path";
 import { createServer } from "http";
 import { nanoid, customAlphabet } from "nanoid";
+import { networkInterfaces } from "os";
 import { WebSocketServer, WebSocket } from "ws";
 import { hostConfig } from "./config.js";
 // import { HostServerMessage, ServerHostMessage } from "./types/index.js";
+
+function getIpAddr() {
+  // temporary function until deployed to public https server
+  const result = {};
+  const interfaces = networkInterfaces();
+  for (const devName in interfaces) {
+    const iface = interfaces[devName];
+    for (const alias of iface) {
+      if (alias.family === "IPv4" && !alias.internal) {
+        result[devName] = alias.address;
+      }
+    }
+  }
+  return result["wlp2s0"];
+}
 
 const generateRoomCode = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ", 4);
 
@@ -58,7 +74,7 @@ class Room {
   }
 
   /**
-   * @param {HostServerMessage} msg 
+   * @param {HostServerMessage} msg
    */
   onMessage(msg) {
     switch (msg.type) {
@@ -122,7 +138,7 @@ class Room {
   }
 
   /**
-   * @param {ServerHostMessage} message 
+   * @param {ServerHostMessage} message
    */
   sendMessage(message) {
     this.hostWebsocket.send(JSON.stringify(message));
@@ -146,8 +162,8 @@ class SignalingServer {
   rooms = {};
 
   /**
-   * 
-   * @param {WebSocket} webSocket 
+   *
+   * @param {WebSocket} webSocket
    * @returns Room
    */
   createRoom(webSocket) {
@@ -190,7 +206,8 @@ app.post("/log", (req, res) => {
 });
 
 app.post("/away-room/:roomCode", (req, res) => {
-  const { playerId } = JSON.parse(req.body);
+  console.log(req.body);
+  const { playerId } = req.body;
 
   console.log(`POST ${req.url} playerId=${playerId}`);
   const room = signalingServer.findRoom(req.params.roomCode);
@@ -236,7 +253,7 @@ app.post("/join-room/:roomCode", (req, res) => {
   });
 });
 
-const PORT = parseInt(process.env.PORT ?? "3000");
+const PORT = parseInt(process.env.PORT ?? "8080");
 const server = createServer(app);
 const wsServer = new WebSocketServer({ server, path: "/create-room" });
 
@@ -252,4 +269,5 @@ wsServer.on("connection", (socket) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`http://localhost:${PORT}`);
+  console.log(getIpAddr());
 });

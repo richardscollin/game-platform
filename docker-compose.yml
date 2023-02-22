@@ -6,8 +6,6 @@ services:
     build: .
     restart: unless-stopped
     networks: ["container-net"]
-    environment:
-      PORT: "80"
   coturn:
     hostname: coturn
     image: coturn.richardscollin.com
